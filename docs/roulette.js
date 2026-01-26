@@ -245,29 +245,47 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
     console.log('User:', user);
 }
 
-// Initialize on load
+// Initialize on load - wait for coin image data to load
+function waitForCoinData(callback, maxAttempts = 50) {
+    let attempts = 0;
+    const checkInterval = setInterval(function() {
+        attempts++;
+        if (typeof MORI_COIN_BASE64 !== 'undefined' && MORI_COIN_BASE64) {
+            clearInterval(checkInterval);
+            console.log('Coin data loaded, initializing roulette...');
+            callback();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            console.error('Timeout waiting for coin data');
+            // Try to initialize anyway
+            callback();
+        }
+    }, 100);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing roulette...');
-    try {
-        initRoulette();
-        updateBalance();
-        updateSpinButton();
-    } catch (error) {
-        console.error('Initialization error:', error);
-    }
+    console.log('DOM loaded, waiting for coin data...');
+    waitForCoinData(function() {
+        try {
+            initRoulette();
+            updateBalance();
+            updateSpinButton();
+        } catch (error) {
+            console.error('Initialization error:', error);
+        }
+    });
 });
 
 // Also try to initialize if DOM is already loaded
-if (document.readyState === 'loading') {
-    // DOM is still loading, wait for DOMContentLoaded
-} else {
-    // DOM is already loaded
-    console.log('DOM already loaded, initializing roulette...');
-    try {
-        initRoulette();
-        updateBalance();
-        updateSpinButton();
-    } catch (error) {
-        console.error('Initialization error:', error);
-    }
+if (document.readyState !== 'loading') {
+    console.log('DOM already loaded, waiting for coin data...');
+    waitForCoinData(function() {
+        try {
+            initRoulette();
+            updateBalance();
+            updateSpinButton();
+        } catch (error) {
+            console.error('Initialization error:', error);
+        }
+    });
 }
