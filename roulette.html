@@ -8,8 +8,23 @@
     <meta http-equiv="Expires" content="0">
     <title>$MORI LOTTERY - Рулетка</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="coin_base64_data.js"></script>
-    <link rel="stylesheet" href="roulette.css?v=18">
+    <script>
+        // Load coin image data asynchronously
+        (function() {
+            const script = document.createElement('script');
+            script.src = 'coin_base64_data.js?v=2';
+            script.async = true;
+            script.onerror = function() {
+                console.error('Failed to load coin_base64_data.js');
+                // Fallback: try to define a placeholder
+                if (typeof MORI_COIN_BASE64 === 'undefined') {
+                    window.MORI_COIN_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+                }
+            };
+            document.head.appendChild(script);
+        })();
+    </script>
+    <link rel="stylesheet" href="roulette.css?v=20">
 </head>
 <body>
     <div class="container">
