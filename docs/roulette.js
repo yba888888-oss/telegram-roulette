@@ -1,7 +1,23 @@
 // Telegram Web App initialization
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
+let tg;
+try {
+    tg = window.Telegram.WebApp;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+    }
+} catch (error) {
+    console.error('Telegram WebApp error:', error);
+    // Fallback for testing outside Telegram
+    tg = {
+        ready: () => {},
+        expand: () => {},
+        showAlert: (msg) => alert(msg),
+        sendData: () => {},
+        close: () => {},
+        initDataUnsafe: {}
+    };
+}
 
 // Prize values in Mori - кастомные призы для Mori Coin
 const prizes = [
@@ -26,32 +42,48 @@ let isFirstSpin = true;
 
 // Initialize roulette with Mori coins
 function initRoulette() {
-    const roulette = document.getElementById('roulette');
-    roulette.innerHTML = '';
-    
-    // Create multiple coin sets for smooth infinite scrolling
-    const totalCoins = 36; // 3 sets of 12 coins
-    for (let i = 0; i < totalCoins; i++) {
-        const prize = prizes[i % prizes.length];
-        const coin = document.createElement('div');
-        coin.className = `coin coin-${prize.type}`;
-        coin.style.setProperty('--coin-index', i);
+    try {
+        const roulette = document.getElementById('roulette');
+        if (!roulette) {
+            console.error('Roulette element not found');
+            return;
+        }
         
-        coin.innerHTML = `
-            <div class="coin-content">
-                <div class="coin-face">
-                    <img src="${MORI_COIN_BASE64}" alt="Mori Coin" class="coin-image">
-                    <div class="coin-glow"></div>
+        // Check if MORI_COIN_BASE64 is defined
+        if (typeof MORI_COIN_BASE64 === 'undefined') {
+            console.error('MORI_COIN_BASE64 is not defined. Check coin_base64_data.js');
+            roulette.innerHTML = '<div style="color: white; text-align: center; padding: 20px;">Ошибка загрузки изображения монеты</div>';
+            return;
+        }
+        
+        roulette.innerHTML = '';
+        
+        // Create multiple coin sets for smooth infinite scrolling
+        const totalCoins = 36; // 3 sets of 12 coins
+        for (let i = 0; i < totalCoins; i++) {
+            const prize = prizes[i % prizes.length];
+            const coin = document.createElement('div');
+            coin.className = `coin coin-${prize.type}`;
+            coin.style.setProperty('--coin-index', i);
+            
+            coin.innerHTML = `
+                <div class="coin-content">
+                    <div class="coin-face">
+                        <img src="${MORI_COIN_BASE64}" alt="Mori Coin" class="coin-image" onerror="this.style.display='none'; console.error('Image load error');">
+                        <div class="coin-glow"></div>
+                    </div>
+                    <div class="prize-amount prize-${prize.type}">${prize.amount} $Mori</div>
                 </div>
-                <div class="prize-amount prize-${prize.type}">${prize.amount} $Mori</div>
-            </div>
-        `;
+            `;
+            
+            roulette.appendChild(coin);
+        }
         
-        roulette.appendChild(coin);
+        // Center the first coin on load
+        centerCoin(0);
+    } catch (error) {
+        console.error('Error initializing roulette:', error);
     }
-    
-    // Center the first coin on load
-    centerCoin(0);
 }
 
 // Center a specific coin by index
@@ -208,6 +240,28 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
 }
 
 // Initialize on load
-initRoulette();
-updateBalance();
-updateSpinButton();
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing roulette...');
+    try {
+        initRoulette();
+        updateBalance();
+        updateSpinButton();
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
+});
+
+// Also try to initialize if DOM is already loaded
+if (document.readyState === 'loading') {
+    // DOM is still loading, wait for DOMContentLoaded
+} else {
+    // DOM is already loaded
+    console.log('DOM already loaded, initializing roulette...');
+    try {
+        initRoulette();
+        updateBalance();
+        updateSpinButton();
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
+}
