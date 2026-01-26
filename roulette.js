@@ -36,6 +36,24 @@ const spinCost = 1;
 let isSpinning = false;
 let isFirstSpin = true;
 
+// Handle coin image loading errors
+function handleCoinImageError(imgElement) {
+    console.error('Coin image failed to load:', imgElement.src);
+    // Try fallback to mori-coin.png if current source is base64
+    if (imgElement.src && imgElement.src.startsWith('data:')) {
+        imgElement.src = 'mori-coin.png';
+        console.log('Trying fallback image: mori-coin.png');
+    } else if (imgElement.src && !imgElement.src.includes('mori-coin.png')) {
+        // If mori-coin.png also fails, show placeholder
+        imgElement.style.display = 'none';
+        const placeholder = document.createElement('div');
+        placeholder.className = 'coin-placeholder';
+        placeholder.textContent = '🪙';
+        placeholder.style.cssText = 'width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 80px;';
+        imgElement.parentElement.appendChild(placeholder);
+    }
+}
+
 // Initialize roulette with Mori coins
 function initRoulette() {
     try {
@@ -46,10 +64,11 @@ function initRoulette() {
         }
         
         // Check if MORI_COIN_BASE64 is defined
-        if (typeof MORI_COIN_BASE64 === 'undefined') {
-            console.error('MORI_COIN_BASE64 is not defined. Check coin_base64_data.js');
-            roulette.innerHTML = '<div style="color: white; text-align: center; padding: 20px;">Ошибка загрузки изображения монеты</div>';
-            return;
+        if (typeof MORI_COIN_BASE64 === 'undefined' || !MORI_COIN_BASE64) {
+            console.error('MORI_COIN_BASE64 is not defined. Trying fallback...');
+            // Try fallback to mori-coin.png
+            window.MORI_COIN_BASE64 = 'mori-coin.png';
+            console.log('Using fallback image: mori-coin.png');
         }
         
         roulette.innerHTML = '';
@@ -65,7 +84,7 @@ function initRoulette() {
             coin.innerHTML = `
                 <div class="coin-content">
                     <div class="coin-face">
-                        <img src="${MORI_COIN_BASE64}" alt="Mori Coin" class="coin-image" onerror="this.style.display='none'; console.error('Image load error');">
+                        <img src="${MORI_COIN_BASE64}" alt="Mori Coin" class="coin-image" onerror="handleCoinImageError(this);">
                         <div class="coin-glow"></div>
                     </div>
                     <div class="prize-amount prize-${prize.type}">${prize.amount} $Mori</div>
@@ -246,7 +265,7 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
 }
 
 // Initialize on load - wait for coin image data to load
-function waitForCoinData(callback, maxAttempts = 50) {
+function waitForCoinData(callback, maxAttempts = 100) {
     let attempts = 0;
     const checkInterval = setInterval(function() {
         attempts++;
@@ -256,8 +275,12 @@ function waitForCoinData(callback, maxAttempts = 50) {
             callback();
         } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval);
-            console.error('Timeout waiting for coin data');
-            // Try to initialize anyway
+            console.warn('Timeout waiting for coin data, using fallback');
+            // Set fallback and initialize anyway
+            if (typeof MORI_COIN_BASE64 === 'undefined' || !MORI_COIN_BASE64) {
+                window.MORI_COIN_BASE64 = 'mori-coin.png';
+                console.log('Using fallback image: mori-coin.png');
+            }
             callback();
         }
     }, 100);

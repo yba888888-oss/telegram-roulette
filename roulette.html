@@ -9,19 +9,75 @@
     <title>$MORI LOTTERY - Рулетка</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Load coin image data asynchronously
+        // Initialize MORI_COIN_BASE64 with undefined to track loading state
+        window.MORI_COIN_BASE64 = undefined;
+        window.coinImageLoaded = false;
+        
+        // Load coin image data with improved error handling
         (function() {
-            const script = document.createElement('script');
-            script.src = 'coin_base64_data.js?v=2';
-            script.async = true;
-            script.onerror = function() {
-                console.error('Failed to load coin_base64_data.js');
-                // Fallback: try to define a placeholder
-                if (typeof MORI_COIN_BASE64 === 'undefined') {
-                    window.MORI_COIN_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+            let loadTimeout;
+            let retryCount = 0;
+            const maxRetries = 3;
+            
+            function loadCoinScript() {
+                const script = document.createElement('script');
+                // Use relative path and add cache-busting timestamp
+                const scriptPath = 'coin_base64_data.js';
+                script.src = scriptPath + '?v=' + Date.now() + '&retry=' + retryCount;
+                
+                script.onload = function() {
+                    clearTimeout(loadTimeout);
+                    // Wait a bit for the script to execute
+                    setTimeout(function() {
+                        if (typeof MORI_COIN_BASE64 !== 'undefined' && MORI_COIN_BASE64) {
+                            console.log('coin_base64_data.js loaded successfully');
+                            window.coinImageLoaded = true;
+                        } else {
+                            console.warn('MORI_COIN_BASE64 not defined after script load');
+                            if (retryCount < maxRetries) {
+                                retryCount++;
+                                console.log('Retrying... attempt ' + (retryCount + 1));
+                                loadCoinScript();
+                            } else {
+                                setFallbackImage();
+                            }
+                        }
+                    }, 100);
+                };
+                
+                script.onerror = function() {
+                    clearTimeout(loadTimeout);
+                    console.error('Failed to load coin_base64_data.js, attempt ' + (retryCount + 1));
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        setTimeout(function() {
+                            loadCoinScript();
+                        }, 1000);
+                    } else {
+                        setFallbackImage();
+                    }
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            function setFallbackImage() {
+                // Try to use mori-coin.png as fallback
+                window.MORI_COIN_BASE64 = 'mori-coin.png';
+                window.coinImageLoaded = true;
+                console.log('Using fallback image: mori-coin.png');
+            }
+            
+            // Set timeout to detect if script takes too long
+            loadTimeout = setTimeout(function() {
+                if (typeof MORI_COIN_BASE64 === 'undefined' || !MORI_COIN_BASE64) {
+                    console.warn('Timeout loading coin_base64_data.js, using fallback');
+                    setFallbackImage();
                 }
-            };
-            document.head.appendChild(script);
+            }, 10000); // 10 second timeout
+            
+            // Start loading
+            loadCoinScript();
         })();
     </script>
     <link rel="stylesheet" href="roulette.css?v=20">
