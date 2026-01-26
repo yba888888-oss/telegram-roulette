@@ -3,62 +3,54 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-// Prize values in Mori
+// Prize values in Mori (matching the wheel: $1000, $100, $200, $300, $400, $500, $600, $700, $800, $900)
 const prizes = [
-    { amount: 50, type: 'gold' },
-    { amount: 100, type: 'gold' },
-    { amount: 150, type: 'gold' },
-    { amount: 200, type: 'dark-gold' },
-    { amount: 75, type: 'gold' },
-    { amount: 500, type: 'dark-gold' },
-    { amount: 125, type: 'gold' },
-    { amount: 250, type: 'gold' },
-    { amount: 1000, type: 'dark-gold' },
-    { amount: 175, type: 'gold' },
-    { amount: 300, type: 'gold' },
-    { amount: 400, type: 'dark-gold' },
+    { amount: 1000, label: '$1000' },
+    { amount: 100, label: '$100' },
+    { amount: 200, label: '$200' },
+    { amount: 300, label: '$300' },
+    { amount: 400, label: '$400' },
+    { amount: 500, label: '$500' },
+    { amount: 600, label: '$600' },
+    { amount: 700, label: '$700' },
+    { amount: 800, label: '$800' },
+    { amount: 900, label: '$900' }
 ];
 
 let balance = 0;
 const spinCost = 1;
 let isSpinning = false;
 let isFirstSpin = true;
+let currentRotation = 0;
 
-// Initialize roulette
-function initRoulette() {
-    const roulette = document.getElementById('roulette');
-    roulette.innerHTML = '';
+// Initialize wheel
+function initWheel() {
+    const wheel = document.getElementById('wheel');
+    wheel.innerHTML = '';
     
-    // Create more coins for smooth scrolling
-    const totalCoins = 30;
-    for (let i = 0; i < totalCoins; i++) {
-        const prize = prizes[i % prizes.length];
-        const coin = document.createElement('div');
-        coin.className = `coin ${prize.type}`;
-        coin.style.setProperty('--coin-index', i);
-        coin.innerHTML = `
-            <div class="coin-content">
-                <div class="coin-face">
-                    <img src="${MORI_COIN_BASE64}" alt="Mori Coin" class="coin-image">
-                </div>
-                <div class="prize-amount">${prize.amount} $Mori</div>
+    const totalSegments = prizes.length;
+    const segmentAngle = 360 / totalSegments;
+    
+    // Create wheel segments
+    prizes.forEach((prize, index) => {
+        const segment = document.createElement('div');
+        segment.className = 'wheel-segment';
+        segment.style.setProperty('--segment-index', index);
+        segment.style.setProperty('--segment-angle', segmentAngle);
+        segment.style.setProperty('--rotation', index * segmentAngle);
+        
+        // Alternate colors: red and cream
+        const isRed = index % 2 === 0;
+        segment.classList.add(isRed ? 'segment-red' : 'segment-cream');
+        
+        segment.innerHTML = `
+            <div class="segment-content">
+                <span class="segment-value">${prize.label}</span>
             </div>
         `;
-        roulette.appendChild(coin);
-    }
-    
-    // Center the first coin on load
-    centerCoin(0);
-}
-
-// Center a specific coin by index
-function centerCoin(coinIndex) {
-    const roulette = document.getElementById('roulette');
-    const coinHeight = 360;
-    const centerOffset = 180; // Center of visible area (600px height / 2 - 180px coin center)
-    const finalPosition = coinIndex * coinHeight - centerOffset;
-    roulette.style.transition = 'transform 0.5s ease-out';
-    roulette.style.transform = `translateY(${finalPosition}px)`;
+        
+        wheel.appendChild(segment);
+    });
 }
 
 // Spin function
@@ -82,48 +74,29 @@ function spin() {
         updateSpinButton();
     }
     
-    const roulette = document.getElementById('roulette');
-    
-    // Get current position
-    const currentTransform = roulette.style.transform;
-    let currentY = 0;
-    if (currentTransform) {
-        const match = currentTransform.match(/translateY\(([^)]+)\)/);
-        if (match) {
-            currentY = parseFloat(match[1]) || 0;
-        }
-    }
+    const wheel = document.getElementById('wheel');
     
     // Random prize selection
     const randomIndex = Math.floor(Math.random() * prizes.length);
     const selectedPrize = prizes[randomIndex];
     
-    // Calculate final position - center the selected coin
-    const coinHeight = 360;
-    const centerOffset = 180; // Center of visible area (600px height / 2 - 180px coin center)
-    const finalPosition = randomIndex * coinHeight - centerOffset;
+    // Calculate rotation
+    // Each segment is 36 degrees (360/10)
+    const segmentAngle = 360 / prizes.length;
+    // Target angle for the selected segment (pointing to top)
+    const targetAngle = randomIndex * segmentAngle;
     
-    // Calculate spin distance - make it spin multiple times (at least 3 full rotations)
-    const spinDistance = 3 * 360 * 12; // 3 full rotations through all 12 coins
-    const totalDistance = currentY - spinDistance + finalPosition;
+    // Spin multiple full rotations (at least 5 full spins)
+    const fullSpins = 5;
+    const totalRotation = currentRotation + (fullSpins * 360) + (360 - targetAngle);
+    currentRotation = totalRotation % 360;
     
-    // Remove transition for animation
-    roulette.style.transition = 'none';
-    roulette.style.transform = `translateY(${currentY}px)`;
+    // Apply rotation
+    wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+    wheel.style.transform = `rotate(${totalRotation}deg)`;
     
-    // Force reflow
-    void roulette.offsetHeight;
-    
-    // Add spinning class for animation
-    roulette.classList.add('spinning');
-    roulette.style.setProperty('--spin-start', `${currentY}px`);
-    roulette.style.setProperty('--spin-end', `${totalDistance}px`);
-    
+    // After animation completes
     setTimeout(() => {
-        roulette.classList.remove('spinning');
-        // Center the winning coin with smooth transition
-        centerCoin(randomIndex);
-        
         // Add prize to balance
         balance += selectedPrize.amount;
         updateBalance();
@@ -132,7 +105,7 @@ function spin() {
         showResult(selectedPrize.amount);
         
         isSpinning = false;
-    }, 3000);
+    }, 4000);
 }
 
 // Show result modal
@@ -205,6 +178,6 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
 }
 
 // Initialize on load
-initRoulette();
+initWheel();
 updateBalance();
 updateSpinButton();
