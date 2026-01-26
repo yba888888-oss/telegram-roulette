@@ -25,14 +25,10 @@ const prizes = [
     { amount: 100, type: 'common' },
     { amount: 150, type: 'common' },
     { amount: 200, type: 'rare' },
-    { amount: 75, type: 'common' },
-    { amount: 500, type: 'epic' },
-    { amount: 125, type: 'common' },
     { amount: 250, type: 'rare' },
-    { amount: 1000, type: 'legendary' },
-    { amount: 175, type: 'common' },
     { amount: 300, type: 'rare' },
-    { amount: 400, type: 'epic' },
+    { amount: 500, type: 'epic' },
+    { amount: 1000, type: 'legendary' },
 ];
 
 let balance = 0;
@@ -59,7 +55,7 @@ function initRoulette() {
         roulette.innerHTML = '';
         
         // Create multiple coin sets for smooth infinite scrolling
-        const totalCoins = 36; // 3 sets of 12 coins
+        const totalCoins = 24; // 3 sets of 8 coins
         for (let i = 0; i < totalCoins; i++) {
             const prize = prizes[i % prizes.length];
             const coin = document.createElement('div');
@@ -139,8 +135,14 @@ function spin() {
     const finalPosition = randomIndex * coinHeight - centerOffset;
     
     // Calculate spin distance - make it spin multiple times (at least 4 full rotations)
-    const spinDistance = 4 * 280 * 12; // 4 full rotations through all 12 coins
+    const spinDistance = 4 * coinHeight * prizes.length; // 4 full rotations through all coins
     const totalDistance = currentY - spinDistance + finalPosition;
+    
+    // Add spinning class to all coins for rotation animation
+    const allCoins = roulette.querySelectorAll('.coin');
+    allCoins.forEach(coin => {
+        coin.classList.add('coin-spinning');
+    });
     
     // Remove transition for animation
     roulette.style.transition = 'none';
@@ -156,6 +158,10 @@ function spin() {
     
     setTimeout(() => {
         roulette.classList.remove('spinning');
+        // Remove spinning class from coins
+        allCoins.forEach(coin => {
+            coin.classList.remove('coin-spinning');
+        });
         // Center the winning coin with smooth transition
         centerCoin(randomIndex);
         
