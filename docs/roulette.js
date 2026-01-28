@@ -37,7 +37,8 @@ const prizes = [
     { amount: 1000, type: 'legendary' },
 ];
 
-let balance = 0;
+// Загружаем баланс из localStorage или устанавливаем 0
+let balance = parseInt(localStorage.getItem('userBalance') || '0', 10);
 let isSpinning = false;
 let canSpin = true; // Может ли пользователь крутить
 
@@ -113,6 +114,14 @@ function checkSpinStatus() {
     const hasSpunLocal = localStorage.getItem('hasSpun');
     const resetSection = document.getElementById('resetSection');
     
+    // Загружаем баланс из localStorage
+    const savedBalance = parseInt(localStorage.getItem('userBalance') || '0', 10);
+    if (savedBalance > 0) {
+        balance = savedBalance;
+        updateBalance();
+        console.log('Balance loaded from localStorage:', balance);
+    }
+    
     if (hasSpunLocal === 'true') {
         canSpin = false;
         const spinBtn = document.getElementById('spinBtn');
@@ -142,6 +151,13 @@ function checkSpinStatus() {
         }
     }
     
+    // Запрашиваем баланс у бота для синхронизации
+    if (tg.sendData) {
+        tg.sendData(JSON.stringify({
+            type: 'get_balance'
+        }));
+    }
+    
     // Отправляем запрос боту для проверки статуса (для логирования)
     if (tg.sendData) {
         tg.sendData(JSON.stringify({
@@ -152,8 +168,11 @@ function checkSpinStatus() {
 
 // Функция для сброса спина
 function resetSpin() {
-    // Очищаем localStorage
+    // Очищаем localStorage для спина
     localStorage.removeItem('hasSpun');
+    
+    // НЕ очищаем баланс - баланс должен сохраняться!
+    // localStorage.removeItem('userBalance'); // НЕ удаляем баланс
     
     // Разрешаем спин
     canSpin = true;
@@ -187,7 +206,7 @@ function resetSpin() {
         alert('✅ Спин сброшен! Теперь вы можете снова крутить рулетку.');
     }
     
-    console.log('Spin reset - localStorage cleared');
+    console.log('Spin reset - localStorage cleared (balance preserved)');
 }
 
 // Spin function
@@ -319,7 +338,10 @@ function spin() {
         
         // Add prize to balance
         balance += savedSelectedPrize.amount;
+        // Сохраняем баланс в localStorage
+        localStorage.setItem('userBalance', balance.toString());
         updateBalance();
+        console.log('Prize added to balance. New balance:', balance);
         
         // Show result modal
         showResult(savedSelectedPrize.amount);
@@ -395,6 +417,9 @@ function updateBalance() {
     if (balanceElement) {
         balanceElement.textContent = `${Math.floor(balance)} $Mori`;
     }
+    // Сохраняем баланс в localStorage
+    localStorage.setItem('userBalance', balance.toString());
+    console.log('Balance updated and saved:', balance);
 }
 
 // Withdraw balance
