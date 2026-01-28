@@ -54,11 +54,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Используем effective_message для большей надежности
         message = update.effective_message
+        current_balance = user_balances.get(user_id, 0)
+        
         if message:
             if has_spun:
                 await message.reply_text(
                     f"Привет, {update.effective_user.first_name}! 👋\n\n"
-                    f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                    f"💰 Ваш баланс: {current_balance} $Mori\n\n"
                     f"🎰 Вы уже использовали свой бесплатный спин!\n\n"
                     f"Нажмите кнопку ниже, чтобы открыть рулетку:",
                     reply_markup=reply_markup
@@ -66,12 +68,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await message.reply_text(
                     f"Привет, {update.effective_user.first_name}! 👋\n\n"
-                    f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                    f"💰 Ваш баланс: {current_balance} $Mori\n\n"
                     f"🎰 У вас есть один бесплатный спин!\n\n"
                     f"Нажмите кнопку ниже, чтобы открыть рулетку:",
                     reply_markup=reply_markup
                 )
-            logger.info(f"Sent start message to user {user_id}, has_spun: {has_spun}")
+            logger.info(f"Sent start message to user {user_id}, balance: {current_balance} $Mori, has_spun: {has_spun}")
         else:
             logger.error(f"No message found in update for user {user_id}")
     except Exception as e:
@@ -84,9 +86,11 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id not in user_balances:
         user_balances[user_id] = 0
     
+    current_balance = user_balances[user_id]
     await update.message.reply_text(
-        f"💰 Ваш баланс: {user_balances[user_id]} $Mori"
+        f"💰 Ваш баланс: {current_balance} $Mori"
     )
+    logger.info(f"Balance check for user {user_id}: {current_balance} $Mori")
 
 # Команда /reset - сброс спина для тестирования
 async def reset_spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -190,10 +194,11 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             
             # Отправляем сообщение в чат
             user_name = update.effective_user.first_name or "Пользователь"
+            current_balance = user_balances[user_id]
             message_text = (
                 f"🎉 Поздравляем, {user_name}!\n\n"
-                f"🎰 Вы выиграли: {prize} $Mori!\n"
-                f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                f"🎰 Вы выиграли: {prize} $Mori!\n\n"
+                f"💰 Ваш баланс: {current_balance} $Mori\n\n"
                 f"💵 Чтобы вывести средства, нажмите кнопку ниже и импортируйте кошелек:"
             )
             
@@ -216,10 +221,11 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                 # Пытаемся отправить без кнопки
                 try:
                     logger.info("Trying to send fallback message without button...")
+                    current_balance = user_balances[user_id]
                     fallback_text = (
                         f"🎉 Поздравляем, {user_name}!\n\n"
-                        f"🎰 Вы выиграли: {prize} $Mori!\n"
-                        f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                        f"🎰 Вы выиграли: {prize} $Mori!\n\n"
+                        f"💰 Ваш баланс: {current_balance} $Mori\n\n"
                         f"💵 Чтобы вывести средства, перейдите по ссылке и импортируйте кошелек:\n"
                         f"🔗 {wallet_url}"
                     )
