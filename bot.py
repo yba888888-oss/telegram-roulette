@@ -21,6 +21,11 @@ BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
 
 # Хранилище балансов пользователей (в реальном проекте используйте БД)
 user_balances = {}
+# Хранилище информации о том, кто уже крутил рулетку
+user_has_spun = {}
+# Статистика выигрышей
+total_winners = 0
+total_prizes_given = 0
 
 # Получить абсолютный путь к HTML файлу
 def get_web_app_url():
@@ -39,6 +44,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user_id not in user_balances:
             user_balances[user_id] = 0
         
+        # Проверяем, крутил ли пользователь уже
+        has_spun = user_has_spun.get(user_id, False)
+        
         keyboard = [
             [InlineKeyboardButton("🎰 Открыть рулетку", web_app=WebAppInfo(url=get_web_app_url()))]
         ]
@@ -47,13 +55,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Используем effective_message для большей надежности
         message = update.effective_message
         if message:
-            await message.reply_text(
-                f"Привет, {update.effective_user.first_name}! 👋\n\n"
-                f"Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                f"Нажмите кнопку ниже, чтобы открыть рулетку:",
-                reply_markup=reply_markup
-            )
-            logger.info(f"Sent start message to user {user_id}")
+            if has_spun:
+                await message.reply_text(
+                    f"Привет, {update.effective_user.first_name}! 👋\n\n"
+                    f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                    f"🎰 Вы уже использовали свой бесплатный спин!\n"
+                    f"📊 Всего выиграли: {total_winners} человек\n"
+                    f"🎁 Всего призов выдано: {total_prizes_given} $Mori\n\n"
+                    f"Нажмите кнопку ниже, чтобы открыть рулетку:",
+                    reply_markup=reply_markup
+                )
+            else:
+                await message.reply_text(
+                    f"Привет, {update.effective_user.first_name}! 👋\n\n"
+                    f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                    f"🎰 У вас есть один бесплатный спин!\n"
+                    f"📊 Всего выиграли: {total_winners} человек\n"
+                    f"🎁 Всего призов выдано: {total_prizes_given} $Mori\n\n"
+                    f"Нажмите кнопку ниже, чтобы открыть рулетку:",
+                    reply_markup=reply_markup
+                )
+            logger.info(f"Sent start message to user {user_id}, has_spun: {has_spun}")
         else:
             logger.error(f"No message found in update for user {user_id}")
     except Exception as e:
@@ -79,15 +101,60 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
         data = json.loads(update.message.web_app_data.data)
         logger.info(f"Received data from user {user_id}: {data}")
         
-        if data.get('type') == 'spin_result':
+        if data.get('type') == 'check_spin_status':
+            # Проверяем, может ли пользователь крутить
+            has_spun = user_has_spun.get(user_id, False)
+            user_balance = user_balances.get(user_id, 0)
+            # Отправляем информацию пользователю
+            if has_spun:
+                await update.message.reply_text(
+                    f"ℹ️ Вы уже использовали свой бесплатный спин.\n"
+                    f"💰 Ваш баланс: {user_balance} $Mori\n\n"
+                    f"📊 Статистика рулетки:\n"
+                    f"👥 Всего выиграли: {total_winners} человек\n"
+                    f"🎁 Всего призов выдано: {total_prizes_given} $Mori"
+                )
+            else:
+                await update.message.reply_text(
+                    f"✅ У вас есть бесплатный спин!\n"
+                    f"💰 Ваш баланс: {user_balance} $Mori\n\n"
+                    f"📊 Статистика рулетки:\n"
+                    f"👥 Всего выиграли: {total_winners} человек\n"
+                    f"🎁 Всего призов выдано: {total_prizes_given} $Mori"
+                )
+            logger.info(f"Spin status check for user {user_id}: can_spin={not has_spun}")
+        
+        elif data.get('type') == 'spin_result':
+            # Проверяем, не крутил ли пользователь уже
+            if user_has_spun.get(user_id, False):
+                await update.message.reply_text(
+                    "❌ Вы уже использовали свой бесплатный спин! Каждый пользователь может крутить только один раз."
+                )
+                logger.warning(f"User {user_id} tried to spin again")
+                return
+            
             prize = data.get('prize', 0)
             if user_id not in user_balances:
                 user_balances[user_id] = 0
             user_balances[user_id] += prize
+            
+            # Отмечаем, что пользователь уже крутил
+            user_has_spun[user_id] = True
+            
+            # Обновляем статистику
+            global total_winners, total_prizes_given
+            total_winners += 1
+            total_prizes_given += prize
+            
             await update.message.reply_text(
-                f"🎉 Поздравляем! Вы выиграли {prize} $Mori!\n"
-                f"💰 Ваш новый баланс: {user_balances[user_id]} $Mori"
+                f"🎉 Поздравляем, {update.effective_user.first_name}!\n\n"
+                f"🎰 Вы выиграли: {prize} $Mori!\n"
+                f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                f"📊 Статистика рулетки:\n"
+                f"👥 Всего выиграли: {total_winners} человек\n"
+                f"🎁 Всего призов выдано: {total_prizes_given} $Mori"
             )
+            logger.info(f"User {user_id} won {prize} $Mori. Total winners: {total_winners}")
         
         elif data.get('type') == 'withdraw_balance':
             # Здесь должна быть интеграция с платежной системой для вывода средств

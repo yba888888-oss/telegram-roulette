@@ -5,6 +5,11 @@ try {
     if (tg) {
         tg.ready();
         tg.expand();
+        
+        // Обработчик ответа от бота
+        tg.onEvent('viewportChanged', function() {
+            console.log('Viewport changed');
+        });
     }
 } catch (error) {
     console.error('Telegram WebApp error:', error);
@@ -15,6 +20,7 @@ try {
         showAlert: (msg) => alert(msg),
         sendData: () => {},
         close: () => {},
+        openLink: (url) => window.open(url, '_blank'),
         initDataUnsafe: {}
     };
 }
@@ -33,6 +39,9 @@ const prizes = [
 
 let balance = 0;
 let isSpinning = false;
+let canSpin = true; // Может ли пользователь крутить
+let totalWinners = 0;
+let totalPrizes = 0;
 
 // Initialize roulette with prizes
 function initRoulette() {
@@ -100,10 +109,40 @@ function centerPrize(prizeIndex) {
     roulette.style.transform = `translateY(${finalPosition}px)`;
 }
 
+// Check if user can spin
+function checkSpinStatus() {
+    if (tg.sendData) {
+        tg.sendData(JSON.stringify({
+            type: 'check_spin_status'
+        }));
+        // Бот ответит через сообщение, но мы не можем его получить напрямую
+        // Поэтому используем проверку при загрузке через initDataUnsafe
+        // или просто блокируем после первого спина
+    }
+    
+    // Проверяем в localStorage (не надежно, но для UI)
+    const hasSpunLocal = localStorage.getItem('hasSpun');
+    if (hasSpunLocal === 'true') {
+        canSpin = false;
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.textContent = 'Спин использован';
+            spinBtn.style.opacity = '0.5';
+            spinBtn.style.cursor = 'not-allowed';
+        }
+    }
+}
+
 // Spin function
 function spin() {
     if (isSpinning) {
         console.log('Already spinning');
+        return;
+    }
+    
+    // Проверяем, может ли пользователь крутить
+    if (!canSpin) {
+        tg.showAlert('Вы уже использовали свой бесплатный спин! Каждый пользователь может крутить только один раз.');
         return;
     }
     
@@ -208,6 +247,19 @@ function spin() {
         roulette.style.transition = 'transform 0.5s ease-out';
         roulette.style.transform = `translateY(${endY}px)`;
         
+        // Отмечаем, что пользователь уже крутил
+        canSpin = false;
+        localStorage.setItem('hasSpun', 'true');
+        
+        // Disable spin button
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.textContent = 'Спин использован';
+            spinBtn.style.opacity = '0.5';
+            spinBtn.style.cursor = 'not-allowed';
+            spinBtn.disabled = true;
+        }
+        
         // Add prize to balance
         balance += savedSelectedPrize.amount;
         updateBalance();
@@ -227,7 +279,7 @@ function showResult(amount) {
     prizeAmount.textContent = `${amount} $Mori`;
     modal.classList.add('show');
     
-    // Send data to bot
+    // Send data to bot - бот проверит, не крутил ли пользователь уже
     if (tg.sendData) {
         tg.sendData(JSON.stringify({
             type: 'spin_result',
@@ -272,9 +324,22 @@ function withdrawBalance() {
     }
 }
 
+// Update statistics display
+function updateStatistics() {
+    // Можно добавить отображение статистики на странице, если нужно
+    console.log('Statistics:', {
+        totalWinners,
+        totalPrizes,
+        canSpin
+    });
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
+    
+    // Check spin status first
+    checkSpinStatus();
     
     // Initialize roulette
     initRoulette();
@@ -286,7 +351,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeModalBtn = document.getElementById('closeModal');
     const backBtn = document.getElementById('backBtn');
     
-    if (spinBtn) spinBtn.addEventListener('click', spin);
+    if (spinBtn) {
+        spinBtn.addEventListener('click', spin);
+        // Disable button if user already spun
+        const hasSpunLocal = localStorage.getItem('hasSpun');
+        if (hasSpunLocal === 'true' || !canSpin) {
+            canSpin = false;
+            spinBtn.textContent = 'Спин использован';
+            spinBtn.style.opacity = '0.5';
+            spinBtn.style.cursor = 'not-allowed';
+            spinBtn.disabled = true;
+        }
+    }
     if (withdrawBtn) withdrawBtn.addEventListener('click', withdrawBalance);
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
     if (backBtn) {
@@ -303,6 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Also initialize if DOM is already loaded
 if (document.readyState !== 'loading') {
     console.log('DOM already loaded, initializing...');
+    checkSpinStatus();
     initRoulette();
     updateBalance();
 }
