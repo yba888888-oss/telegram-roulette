@@ -94,6 +94,11 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     try:
         # Получаем данные из Web App
+        if not hasattr(update.message, 'web_app_data') or not update.message.web_app_data:
+            logger.error(f"No web_app_data in message from user {user_id}")
+            await update.message.reply_text("❌ Ошибка: данные не получены")
+            return
+            
         data = json.loads(update.message.web_app_data.data)
         logger.info(f"Received data from user {user_id}: {data}")
         
