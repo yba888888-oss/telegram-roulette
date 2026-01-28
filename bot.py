@@ -322,6 +322,8 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Сбрасываем спин по запросу из Web App
             user_has_spun[user_id] = False
             logger.info(f"Spin reset requested from Web App for user {user_id}")
+            # Сохраняем изменения
+            save_user_data()
             # Отправляем подтверждение
             chat_id = update.effective_chat.id
             try:
@@ -329,6 +331,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                     chat_id=chat_id,
                     text="✅ Спин сброшен! Теперь вы можете снова крутить рулетку."
                 )
+                logger.info(f"Reset confirmation sent to user {user_id}")
             except Exception as e:
                 logger.error(f"Error sending reset confirmation: {e}")
         
