@@ -57,14 +57,21 @@ user_balances = initial_data.get('balances', {})
 user_has_spun = initial_data.get('has_spun', {})
 
 # Конвертируем ключи из строк в int (JSON сохраняет ключи как строки)
-user_balances = {int(k): v for k, v in user_balances.items()}
-user_has_spun = {int(k): v for k, v in user_has_spun.items()}
+try:
+    user_balances = {int(k): v for k, v in user_balances.items() if k}
+    user_has_spun = {int(k): v for k, v in user_has_spun.items() if k}
+except Exception as e:
+    logger.error(f"Error converting user data keys: {e}")
+    user_balances = {}
+    user_has_spun = {}
 
 # Статистика выигрышей (используется только для логирования)
 total_winners = 0
 total_prizes_given = 0
 
 logger.info(f"Loaded {len(user_balances)} user balances and {len(user_has_spun)} spin records")
+if user_balances:
+    logger.info(f"Sample balances: {dict(list(user_balances.items())[:3])}")
 
 # Получить абсолютный путь к HTML файлу
 def get_web_app_url():
