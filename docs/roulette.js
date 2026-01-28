@@ -319,16 +319,6 @@ function withdrawBalance() {
     }
 }
 
-// Update statistics display
-function updateStatistics() {
-    // Можно добавить отображение статистики на странице, если нужно
-    console.log('Statistics:', {
-        totalWinners,
-        totalPrizes,
-        canSpin
-    });
-}
-
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
