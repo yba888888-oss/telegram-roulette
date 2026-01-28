@@ -106,16 +106,31 @@ async def reset_spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Обработка данных из Web App
 async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    chat_id = update.effective_chat.id
+    
+    logger.info(f"=== Web App Data Received ===")
+    logger.info(f"User ID: {user_id}, Chat ID: {chat_id}")
+    logger.info(f"Update message type: {type(update.message)}")
+    logger.info(f"Has web_app_data attr: {hasattr(update.message, 'web_app_data')}")
     
     try:
         # Получаем данные из Web App
         if not hasattr(update.message, 'web_app_data') or not update.message.web_app_data:
             logger.error(f"No web_app_data in message from user {user_id}")
-            await update.message.reply_text("❌ Ошибка: данные не получены")
+            try:
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text="❌ Ошибка: данные не получены от Web App"
+                )
+            except Exception as e:
+                logger.error(f"Error sending error message: {e}")
             return
+        
+        logger.info(f"web_app_data exists: {update.message.web_app_data}")
+        logger.info(f"web_app_data.data: {update.message.web_app_data.data}")
             
         data = json.loads(update.message.web_app_data.data)
-        logger.info(f"Received data from user {user_id}: {data}")
+        logger.info(f"Parsed data from user {user_id}: {data}")
         
         if data.get('type') == 'check_spin_status':
             # Проверяем, может ли пользователь крутить

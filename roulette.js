@@ -342,17 +342,44 @@ function showResult(amount) {
         prize: amount
     };
     
-    console.log('Sending spin result to bot:', dataToSend);
+    console.log('=== Sending spin result to bot ===');
+    console.log('Data to send:', dataToSend);
+    console.log('tg object:', tg);
+    console.log('tg.sendData available:', typeof tg.sendData === 'function');
     
-    if (tg.sendData) {
+    if (tg && tg.sendData && typeof tg.sendData === 'function') {
         try {
-            tg.sendData(JSON.stringify(dataToSend));
-            console.log('Data sent successfully');
+            const jsonData = JSON.stringify(dataToSend);
+            console.log('JSON string:', jsonData);
+            tg.sendData(jsonData);
+            console.log('✅ Data sent successfully via tg.sendData');
+            
+            // Дополнительная проверка через небольшой таймаут
+            setTimeout(() => {
+                console.log('Checking if data was received by bot...');
+            }, 1000);
         } catch (error) {
-            console.error('Error sending data:', error);
+            console.error('❌ Error sending data:', error);
+            console.error('Error stack:', error.stack);
         }
     } else {
-        console.error('tg.sendData is not available!');
+        console.error('❌ tg.sendData is not available!');
+        console.error('tg object:', tg);
+        console.error('tg.sendData type:', typeof tg.sendData);
+        
+        // Попытка альтернативного способа отправки
+        if (window.Telegram && window.Telegram.WebApp) {
+            console.log('Trying alternative Telegram WebApp API...');
+            try {
+                const altTg = window.Telegram.WebApp;
+                if (altTg.sendData) {
+                    altTg.sendData(JSON.stringify(dataToSend));
+                    console.log('✅ Data sent via alternative method');
+                }
+            } catch (altError) {
+                console.error('Alternative method also failed:', altError);
+            }
+        }
     }
 }
 
