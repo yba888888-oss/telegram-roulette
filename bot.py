@@ -125,7 +125,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if has_spun:
                 await message.reply_text(
                     f"Привет, {update.effective_user.first_name}! 👋\n\n"
-                    f"💰 Ваш баланс: {current_balance} $Mori\n\n"
                     f"🎰 Вы уже использовали свой бесплатный спин!\n\n"
                     f"Нажмите кнопку ниже, чтобы открыть рулетку:",
                     reply_markup=reply_markup
@@ -133,7 +132,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await message.reply_text(
                     f"Привет, {update.effective_user.first_name}! 👋\n\n"
-                    f"💰 Ваш баланс: {current_balance} $Mori\n\n"
                     f"🎰 У вас есть один бесплатный спин!\n\n"
                     f"Нажмите кнопку ниже, чтобы открыть рулетку:",
                     reply_markup=reply_markup
