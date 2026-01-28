@@ -228,6 +228,20 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                     f"Вывод средств будет обработан в ближайшее время."
                 )
         
+        elif data.get('type') == 'reset_spin_request':
+            # Сбрасываем спин по запросу из Web App
+            user_has_spun[user_id] = False
+            logger.info(f"Spin reset requested from Web App for user {user_id}")
+            # Отправляем подтверждение
+            chat_id = update.effective_chat.id
+            try:
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ Спин сброшен! Теперь вы можете снова крутить рулетку."
+                )
+            except Exception as e:
+                logger.error(f"Error sending reset confirmation: {e}")
+        
         elif data.get('type') == 'get_balance':
             # Отправляем баланс обратно в веб-приложение
             if user_id not in user_balances:
