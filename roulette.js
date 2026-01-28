@@ -61,15 +61,8 @@ function initRoulette() {
             return;
         }
         
-        // Check if MORI_COIN_BASE64 is defined
-        if (typeof MORI_COIN_BASE64 === 'undefined' || !MORI_COIN_BASE64) {
-            console.error('MORI_COIN_BASE64 is not defined. Trying fallback...');
-            // Try fallback to mori-coin.png
-            window.MORI_COIN_BASE64 = 'mori-coin.png';
-            console.log('Using fallback image: mori-coin.png');
-        }
-        
         roulette.innerHTML = '';
+        console.log('Cleared roulette, creating coins...');
         
         // Create multiple coin sets for smooth infinite scrolling
         // Создаем намного больше дубликатов для бесконечной прокрутки
@@ -343,49 +336,25 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
     console.log('User:', user);
 }
 
-// Initialize on load - wait for coin image data to load
-function waitForCoinData(callback, maxAttempts = 100) {
-    let attempts = 0;
-    const checkInterval = setInterval(function() {
-        attempts++;
-        if (typeof MORI_COIN_BASE64 !== 'undefined' && MORI_COIN_BASE64) {
-            clearInterval(checkInterval);
-            console.log('Coin data loaded, initializing roulette...');
-            callback();
-        } else if (attempts >= maxAttempts) {
-            clearInterval(checkInterval);
-            console.warn('Timeout waiting for coin data, using fallback');
-            // Set fallback and initialize anyway
-            if (typeof MORI_COIN_BASE64 === 'undefined' || !MORI_COIN_BASE64) {
-                window.MORI_COIN_BASE64 = 'mori-coin.png';
-                console.log('Using fallback image: mori-coin.png');
-            }
-            callback();
-        }
-    }, 100);
+// Initialize on load
+function initializeApp() {
+    console.log('Initializing app...');
+    try {
+        initRoulette();
+        updateBalance();
+        console.log('App initialized successfully');
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, waiting for coin data...');
-    waitForCoinData(function() {
-        try {
-            initRoulette();
-            updateBalance();
-        } catch (error) {
-            console.error('Initialization error:', error);
-        }
-    });
+    console.log('DOM loaded, initializing...');
+    initializeApp();
 });
 
 // Also try to initialize if DOM is already loaded
 if (document.readyState !== 'loading') {
-    console.log('DOM already loaded, waiting for coin data...');
-    waitForCoinData(function() {
-        try {
-            initRoulette();
-            updateBalance();
-        } catch (error) {
-            console.error('Initialization error:', error);
-        }
-    });
+    console.log('DOM already loaded, initializing...');
+    initializeApp();
 }
