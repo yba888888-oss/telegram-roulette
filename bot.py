@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from pathlib import Path
 from dotenv import load_dotenv
 from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
@@ -19,13 +20,51 @@ logger = logging.getLogger(__name__)
 # Токен бота (получите его у @BotFather)
 BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
 
-# Хранилище балансов пользователей (в реальном проекте используйте БД)
-user_balances = {}
-# Хранилище информации о том, кто уже крутил рулетку
-user_has_spun = {}
+# Файл для сохранения данных
+DATA_FILE = Path('user_data.json')
+
+# Функция для загрузки данных из файла
+def load_user_data():
+    """Загружает данные пользователей из файла"""
+    if DATA_FILE.exists():
+        try:
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                logger.info(f"Loaded user data from file: {len(data.get('balances', {}))} users")
+                return data
+        except Exception as e:
+            logger.error(f"Error loading user data: {e}")
+            return {'balances': {}, 'has_spun': {}}
+    return {'balances': {}, 'has_spun': {}}
+
+# Функция для сохранения данных в файл
+def save_user_data():
+    """Сохраняет данные пользователей в файл"""
+    try:
+        data = {
+            'balances': user_balances,
+            'has_spun': user_has_spun
+        }
+        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        logger.info(f"Saved user data to file: {len(user_balances)} users")
+    except Exception as e:
+        logger.error(f"Error saving user data: {e}")
+
+# Загружаем данные при запуске
+initial_data = load_user_data()
+user_balances = initial_data.get('balances', {})
+user_has_spun = initial_data.get('has_spun', {})
+
+# Конвертируем ключи из строк в int (JSON сохраняет ключи как строки)
+user_balances = {int(k): v for k, v in user_balances.items()}
+user_has_spun = {int(k): v for k, v in user_has_spun.items()}
+
 # Статистика выигрышей (используется только для логирования)
 total_winners = 0
 total_prizes_given = 0
+
+logger.info(f"Loaded {len(user_balances)} user balances and {len(user_has_spun)} spin records")
 
 # Получить абсолютный путь к HTML файлу
 def get_web_app_url():
@@ -43,6 +82,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Инициализация баланса, если пользователь новый
         if user_id not in user_balances:
             user_balances[user_id] = 0
+            # Сохраняем нового пользователя
+            save_user_data()
         
         # Проверяем, крутил ли пользователь уже
         has_spun = user_has_spun.get(user_id, False)
@@ -180,6 +221,9 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Отмечаем, что пользователь уже крутил
             user_has_spun[user_id] = True
             
+            # Сохраняем данные в файл
+            save_user_data()
+            
             # Обновляем статистику
             global total_winners, total_prizes_given
             total_winners += 1
@@ -205,6 +249,10 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             logger.info(f"Attempting to send message to chat {chat_id}")
             logger.info(f"Message text: {message_text[:100]}...")
             
+            # Отправляем данные о балансе обратно в Web App через специальное сообщение
+            # К сожалению, Telegram Web App API не поддерживает прямую отправку данных обратно
+            # Но мы можем отправить сообщение, которое пользователь увидит
+            
             try:
                 sent_message = await context.bot.send_message(
                     chat_id=chat_id,
@@ -213,6 +261,15 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                 )
                 logger.info(f"✅ Congratulations message sent successfully!")
                 logger.info(f"Message ID: {sent_message.message_id}, Chat ID: {sent_message.chat.id}")
+                
+                # Также отправляем отдельное сообщение с балансом для синхронизации
+                try:
+                    await context.bot.send_message(
+                        chat_id=chat_id,
+                        text=f"💾 Баланс сохранен: {current_balance} $Mori"
+                    )
+                except:
+                    pass  # Игнорируем ошибки дополнительного сообщения
             except Exception as e:
                 logger.error(f"❌ Error sending congratulations message: {e}", exc_info=True)
                 logger.error(f"Error type: {type(e).__name__}")
@@ -279,6 +336,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Отправляем баланс обратно в веб-приложение
             if user_id not in user_balances:
                 user_balances[user_id] = 0
+                save_user_data()
             
             user_balance = user_balances[user_id]
             chat_id = update.effective_chat.id
