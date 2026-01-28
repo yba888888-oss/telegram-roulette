@@ -32,9 +32,7 @@ const prizes = [
 ];
 
 let balance = 0;
-const spinCost = 1;
 let isSpinning = false;
-let isFirstSpin = true;
 
 // Handle coin image loading errors
 function handleCoinImageError(imgElement) {
@@ -83,10 +81,6 @@ function initRoulette() {
             
             coin.innerHTML = `
                 <div class="coin-content">
-                    <div class="coin-face">
-                        <img src="${MORI_COIN_BASE64}" alt="Mori Coin" class="coin-image" onerror="handleCoinImageError(this);">
-                        <div class="coin-glow"></div>
-                    </div>
                     <div class="prize-amount prize-${prize.type}">${prize.amount} $Mori</div>
                 </div>
             `;
@@ -104,8 +98,8 @@ function initRoulette() {
 // Center a specific coin by index
 function centerCoin(coinIndex) {
     const roulette = document.getElementById('roulette');
-    const coinHeight = 280;
-    const centerOffset = 140; // Center of visible area
+    const coinHeight = 140; // Updated height for coin without image
+    const centerOffset = 70; // Center of visible area
     const finalPosition = coinIndex * coinHeight - centerOffset;
     roulette.style.transition = 'transform 0.5s ease-out';
     roulette.style.transform = `translateY(${finalPosition}px)`;
@@ -115,22 +109,7 @@ function centerCoin(coinIndex) {
 function spin() {
     if (isSpinning) return;
     
-    // First spin is free
-    if (!isFirstSpin && balance < spinCost) {
-        tg.showAlert('Недостаточно средств!');
-        return;
-    }
-    
     isSpinning = true;
-    
-    // Only deduct cost if it's not the first spin
-    if (!isFirstSpin) {
-        balance -= spinCost;
-        updateBalance();
-    } else {
-        isFirstSpin = false;
-        updateSpinButton();
-    }
     
     const roulette = document.getElementById('roulette');
     
@@ -149,8 +128,8 @@ function spin() {
     const selectedPrize = prizes[randomIndex];
     
     // Calculate final position - center the selected coin
-    const coinHeight = 280;
-    const centerOffset = 140;
+    const coinHeight = 140; // Updated height for coin without image
+    const centerOffset = 70; // Half of visible area
     const finalPosition = randomIndex * coinHeight - centerOffset;
     
     // Calculate spin distance - make it spin multiple times (at least 4 full rotations)
@@ -226,31 +205,25 @@ function updateBalance() {
 // Update spin button text
 function updateSpinButton() {
     const spinBtn = document.getElementById('spinBtn');
-    if (isFirstSpin) {
-        spinBtn.textContent = 'Бесплатный спин';
-    } else {
-        spinBtn.textContent = 'Крутить за $1';
-    }
+    spinBtn.textContent = 'Бесплатный спин';
 }
 
-// Top up balance
-function topUpBalance() {
-    // Send data to bot to open payment
+// Withdraw balance
+function withdrawBalance() {
+    // Send data to bot to withdraw balance
     if (tg.sendData) {
         tg.sendData(JSON.stringify({
-            type: 'top_up_balance'
+            type: 'withdraw_balance',
+            amount: balance
         }));
     } else {
-        // Fallback: just add some balance for testing
-        balance += 100;
-        updateBalance();
-        tg.showAlert('Баланс пополнен на $100');
+        tg.showAlert('Функция вывода средств будет доступна в боте');
     }
 }
 
 // Event listeners
 document.getElementById('spinBtn').addEventListener('click', spin);
-document.getElementById('topUpBtn').addEventListener('click', topUpBalance);
+document.getElementById('withdrawBtn').addEventListener('click', withdrawBalance);
 document.getElementById('closeModal').addEventListener('click', closeModal);
 document.getElementById('backBtn').addEventListener('click', () => {
     if (tg.close) {
@@ -292,7 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             initRoulette();
             updateBalance();
-            updateSpinButton();
         } catch (error) {
             console.error('Initialization error:', error);
         }
@@ -306,7 +278,6 @@ if (document.readyState !== 'loading') {
         try {
             initRoulette();
             updateBalance();
-            updateSpinButton();
         } catch (error) {
             console.error('Initialization error:', error);
         }
