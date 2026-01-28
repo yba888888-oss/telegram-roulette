@@ -126,8 +126,10 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             if user_has_spun.get(user_id, False):
                 logger.warning(f"User {user_id} tried to spin again, but already spun")
                 try:
-                    await update.message.reply_text(
-                        "❌ Вы уже использовали свой бесплатный спин! Каждый пользователь может крутить только один раз."
+                    chat_id = update.effective_chat.id
+                    await context.bot.send_message(
+                        chat_id=chat_id,
+                        text="❌ Вы уже использовали свой бесплатный спин! Каждый пользователь может крутить только один раз."
                     )
                 except Exception as e:
                     logger.error(f"Error sending message: {e}")
@@ -136,6 +138,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             prize = data.get('prize', 0)
             logger.info(f"User {user_id} won {prize} $Mori")
             
+            # Обновляем баланс
             if user_id not in user_balances:
                 user_balances[user_id] = 0
             user_balances[user_id] += prize
@@ -155,28 +158,39 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
+            # Отправляем сообщение в чат
+            chat_id = update.effective_chat.id
+            user_name = update.effective_user.first_name or "Пользователь"
+            
             try:
-                user_name = update.effective_user.first_name or "Пользователь"
-                await update.message.reply_text(
-                    f"🎉 Поздравляем, {user_name}!\n\n"
-                    f"🎰 Вы выиграли: {prize} $Mori!\n"
-                    f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                    f"Нажмите кнопку ниже, чтобы импортировать кошелек:",
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=(
+                        f"🎉 Поздравляем, {user_name}!\n\n"
+                        f"🎰 Вы выиграли: {prize} $Mori!\n"
+                        f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                        f"💵 Чтобы вывести средства, нажмите кнопку ниже и импортируйте кошелек:"
+                    ),
                     reply_markup=reply_markup
                 )
-                logger.info(f"Congratulations message sent to user {user_id}")
+                logger.info(f"Congratulations message sent to user {user_id} in chat {chat_id}")
             except Exception as e:
                 logger.error(f"Error sending congratulations message: {e}", exc_info=True)
                 # Пытаемся отправить без кнопки
                 try:
-                    await update.message.reply_text(
-                        f"🎉 Поздравляем!\n\n"
-                        f"🎰 Вы выиграли: {prize} $Mori!\n"
-                        f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                        f"🔗 Импортировать кошелек: {wallet_url}"
+                    await context.bot.send_message(
+                        chat_id=chat_id,
+                        text=(
+                            f"🎉 Поздравляем, {user_name}!\n\n"
+                            f"🎰 Вы выиграли: {prize} $Mori!\n"
+                            f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                            f"💵 Чтобы вывести средства, перейдите по ссылке и импортируйте кошелек:\n"
+                            f"🔗 {wallet_url}"
+                        )
                     )
+                    logger.info(f"Fallback message sent to user {user_id}")
                 except Exception as e2:
-                    logger.error(f"Error sending fallback message: {e2}")
+                    logger.error(f"Error sending fallback message: {e2}", exc_info=True)
         
         elif data.get('type') == 'withdraw_balance':
             # Здесь должна быть интеграция с платежной системой для вывода средств
