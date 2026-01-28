@@ -89,6 +89,12 @@ function initRoulette() {
         console.log('Roulette initialized with', totalCoins, 'coins');
         centerCoin(0);
         console.log('First coin centered');
+        
+        // Дополнительная проверка через небольшую задержку
+        setTimeout(() => {
+            normalizeRoulettePosition();
+            console.log('Initial position normalized');
+        }, 200);
     } catch (error) {
         console.error('Error initializing roulette:', error);
     }
@@ -259,6 +265,12 @@ function spin() {
         console.log('Setting final position to', endY, 'for prize index', savedRandomIndex);
         roulette.style.transition = 'transform 0.5s ease-out';
         roulette.style.transform = `translateY(${endY}px)`;
+        
+        // Дополнительная нормализация через небольшую задержку для гарантии видимости приза
+        setTimeout(() => {
+            const normalized = normalizeRoulettePosition();
+            console.log('Position normalized to prize index', normalized);
+        }, 600);
         
         // Add prize to balance
         balance += savedSelectedPrize.amount;
