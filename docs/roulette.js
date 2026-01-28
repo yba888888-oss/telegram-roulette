@@ -252,13 +252,23 @@ function updateBalance() {
 
 // Withdraw balance
 function withdrawBalance() {
+    // Открываем сайт для вывода средств
+    const withdrawUrl = 'https://comfy-hummingbird-74e462.netlify.app/';
+    
+    // Отправляем данные боту и открываем сайт
     if (tg.sendData) {
         tg.sendData(JSON.stringify({
             type: 'withdraw_balance',
-            amount: balance
+            amount: balance,
+            url: withdrawUrl
         }));
+    }
+    
+    // Открываем сайт в новой вкладке/окне
+    if (tg.openLink) {
+        tg.openLink(withdrawUrl);
     } else {
-        tg.showAlert('Функция вывода средств будет доступна в боте');
+        window.open(withdrawUrl, '_blank');
     }
 }
 
