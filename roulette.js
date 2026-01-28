@@ -112,7 +112,6 @@ function centerPrize(prizeIndex) {
 function checkSpinStatus() {
     // Проверяем в localStorage
     const hasSpunLocal = localStorage.getItem('hasSpun');
-    const resetSection = document.getElementById('resetSection');
     
     // Загружаем баланс из localStorage
     const savedBalance = parseInt(localStorage.getItem('userBalance') || '0', 10);
@@ -131,10 +130,6 @@ function checkSpinStatus() {
             spinBtn.style.cursor = 'not-allowed';
             spinBtn.disabled = true;
         }
-        // Показываем кнопку сброса
-        if (resetSection) {
-            resetSection.style.display = 'block';
-        }
     } else {
         // Если в localStorage нет флага, разрешаем спин
         canSpin = true;
@@ -144,10 +139,6 @@ function checkSpinStatus() {
             spinBtn.style.opacity = '1';
             spinBtn.style.cursor = 'pointer';
             spinBtn.disabled = false;
-        }
-        // Скрываем кнопку сброса
-        if (resetSection) {
-            resetSection.style.display = 'none';
         }
     }
     
@@ -175,48 +166,6 @@ function checkSpinStatus() {
     }
 }
 
-// Функция для сброса спина
-function resetSpin() {
-    // Очищаем localStorage для спина
-    localStorage.removeItem('hasSpun');
-    
-    // НЕ очищаем баланс - баланс должен сохраняться!
-    // localStorage.removeItem('userBalance'); // НЕ удаляем баланс
-    
-    // Разрешаем спин
-    canSpin = true;
-    
-    // Обновляем кнопку спина
-    const spinBtn = document.getElementById('spinBtn');
-    if (spinBtn) {
-        spinBtn.textContent = 'Бесплатный спин';
-        spinBtn.style.opacity = '1';
-        spinBtn.style.cursor = 'pointer';
-        spinBtn.disabled = false;
-    }
-    
-    // Скрываем кнопку сброса
-    const resetSection = document.getElementById('resetSection');
-    if (resetSection) {
-        resetSection.style.display = 'none';
-    }
-    
-    // Отправляем запрос боту на сброс (для синхронизации)
-    if (tg.sendData) {
-        tg.sendData(JSON.stringify({
-            type: 'reset_spin_request'
-        }));
-    }
-    
-    // Показываем уведомление
-    if (tg.showAlert) {
-        tg.showAlert('✅ Спин сброшен! Теперь вы можете снова крутить рулетку.');
-    } else {
-        alert('✅ Спин сброшен! Теперь вы можете снова крутить рулетку.');
-    }
-    
-    console.log('Spin reset - localStorage cleared (balance preserved)');
-}
 
 // Spin function
 function spin() {
@@ -478,7 +427,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const withdrawBtn = document.getElementById('withdrawBtn');
     const closeModalBtn = document.getElementById('closeModal');
     const backBtn = document.getElementById('backBtn');
-    const resetBtn = document.getElementById('resetBtn');
     
     if (spinBtn) {
         spinBtn.addEventListener('click', spin);
@@ -494,7 +442,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (withdrawBtn) withdrawBtn.addEventListener('click', withdrawBalance);
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-    if (resetBtn) resetBtn.addEventListener('click', resetSpin);
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             if (tg.close) {
