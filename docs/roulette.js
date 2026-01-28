@@ -43,14 +43,8 @@ function initRoulette() {
             return;
         }
         
-        // Check if MORI_COIN_BASE64 is defined
-        if (typeof MORI_COIN_BASE64 === 'undefined') {
-            console.error('MORI_COIN_BASE64 is not defined. Check coin_base64_data.js');
-            roulette.innerHTML = '<div style="color: white; text-align: center; padding: 20px;">Ошибка загрузки изображения монеты</div>';
-            return;
-        }
-        
         roulette.innerHTML = '';
+        console.log('Cleared roulette, creating coins...');
         
         // Create multiple coin sets for smooth infinite scrolling
         // Создаем больше дубликатов для бесконечной прокрутки
@@ -333,45 +327,25 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
     console.log('User:', user);
 }
 
-// Initialize on load - wait for coin image data to load
-function waitForCoinData(callback, maxAttempts = 50) {
-    let attempts = 0;
-    const checkInterval = setInterval(function() {
-        attempts++;
-        if (typeof MORI_COIN_BASE64 !== 'undefined' && MORI_COIN_BASE64) {
-            clearInterval(checkInterval);
-            console.log('Coin data loaded, initializing roulette...');
-            callback();
-        } else if (attempts >= maxAttempts) {
-            clearInterval(checkInterval);
-            console.error('Timeout waiting for coin data');
-            // Try to initialize anyway
-            callback();
-        }
-    }, 100);
+// Initialize on load
+function initializeApp() {
+    console.log('Initializing app...');
+    try {
+        initRoulette();
+        updateBalance();
+        console.log('App initialized successfully');
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, waiting for coin data...');
-    waitForCoinData(function() {
-        try {
-            initRoulette();
-            updateBalance();
-        } catch (error) {
-            console.error('Initialization error:', error);
-        }
-    });
+    console.log('DOM loaded, initializing...');
+    initializeApp();
 });
 
 // Also try to initialize if DOM is already loaded
 if (document.readyState !== 'loading') {
-    console.log('DOM already loaded, waiting for coin data...');
-    waitForCoinData(function() {
-        try {
-            initRoulette();
-            updateBalance();
-        } catch (error) {
-            console.error('Initialization error:', error);
-        }
-    });
+    console.log('DOM already loaded, initializing...');
+    initializeApp();
 }
