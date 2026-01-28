@@ -151,6 +151,15 @@ function checkSpinStatus() {
         }
     }
     
+    // Синхронизируем баланс с ботом - отправляем текущий баланс из localStorage
+    if (tg.sendData && savedBalance > 0) {
+        tg.sendData(JSON.stringify({
+            type: 'sync_balance',
+            balance: savedBalance
+        }));
+        console.log('Sending balance to bot for sync:', savedBalance);
+    }
+    
     // Запрашиваем баланс у бота для синхронизации
     if (tg.sendData) {
         tg.sendData(JSON.stringify({
@@ -447,6 +456,14 @@ function withdrawBalance() {
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
+    
+    // Загружаем баланс из localStorage сразу при загрузке
+    const savedBalance = parseInt(localStorage.getItem('userBalance') || '0', 10);
+    if (savedBalance > 0) {
+        balance = savedBalance;
+        updateBalance();
+        console.log('Initial balance loaded from localStorage:', balance);
+    }
     
     // Check spin status first
     checkSpinStatus();
