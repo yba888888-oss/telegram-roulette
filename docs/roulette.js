@@ -40,8 +40,6 @@ const prizes = [
 let balance = 0;
 let isSpinning = false;
 let canSpin = true; // Может ли пользователь крутить
-let totalWinners = 0;
-let totalPrizes = 0;
 
 // Initialize roulette with prizes
 function initRoulette() {
