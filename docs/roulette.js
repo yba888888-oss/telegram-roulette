@@ -91,7 +91,7 @@ function centerCoin(coinIndex) {
     const normalizedIndex = coinIndex % prizes.length;
     
     // Используем позицию из середины созданных элементов для гарантии видимости
-    const middleSetIndex = 10; // Середина из 20 наборов
+    const middleSetIndex = 7; // Середина из 15 наборов
     const visualIndex = middleSetIndex * prizes.length + normalizedIndex;
     const finalPosition = visualIndex * coinHeight - centerOffset;
     
@@ -124,7 +124,7 @@ function normalizeRoulettePosition() {
     
     // Устанавливаем позицию точно на приз
     // Используем позицию из середины созданных элементов для гарантии видимости
-    const middleSetIndex = 10; // Середина из 20 наборов
+    const middleSetIndex = 7; // Середина из 15 наборов
     const visualIndex = middleSetIndex * prizes.length + normalizedIndex;
     const finalPosition = visualIndex * coinHeight - centerOffset;
     
@@ -186,7 +186,7 @@ function spin() {
     // Calculate positions
     const coinHeight = 200;
     const centerOffset = 100;
-    const middleSetIndex = 10; // Середина из 20 наборов
+    const middleSetIndex = 7; // Середина из 15 наборов
     
     // Всегда начинаем с позиции в середине созданных элементов
     // Определяем текущий индекс приза
@@ -257,10 +257,9 @@ function spin() {
         roulette.style.transition = 'transform 0.5s ease-out';
         roulette.style.transform = `translateY(${finalPos}px)`;
         
-        // Дополнительная нормализация через небольшую задержку для гарантии видимости приза
+        // Дополнительная нормализация через небольшую задержку
         setTimeout(() => {
-            const normalized = normalizeRoulettePosition();
-            console.log('Position normalized to prize index', normalized);
+            normalizeRoulettePosition();
         }, 600);
         
         // Add prize to balance
