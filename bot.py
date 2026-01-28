@@ -148,19 +148,20 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                 logger.info(f"Spin status check for user {user_id}: can_spin=True, balance={user_balance}")
         
         elif data.get('type') == 'spin_result':
-            logger.info(f"Processing spin_result for user {user_id}")
+            logger.info(f"=== Processing spin_result ===")
+            logger.info(f"User ID: {user_id}, Chat ID: {chat_id}")
             
             # Проверяем, не крутил ли пользователь уже
             if user_has_spun.get(user_id, False):
                 logger.warning(f"User {user_id} tried to spin again, but already spun")
                 try:
-                    chat_id = update.effective_chat.id
                     await context.bot.send_message(
                         chat_id=chat_id,
                         text="❌ Вы уже использовали свой бесплатный спин! Каждый пользователь может крутить только один раз."
                     )
+                    logger.info(f"Duplicate spin message sent to user {user_id}")
                 except Exception as e:
-                    logger.error(f"Error sending message: {e}")
+                    logger.error(f"Error sending duplicate spin message: {e}", exc_info=True)
                 return
             
             prize = data.get('prize', 0)
@@ -170,6 +171,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             if user_id not in user_balances:
                 user_balances[user_id] = 0
             user_balances[user_id] += prize
+            logger.info(f"Updated balance for user {user_id}: {user_balances[user_id]} $Mori")
             
             # Отмечаем, что пользователь уже крутил
             user_has_spun[user_id] = True
@@ -187,38 +189,48 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             # Отправляем сообщение в чат
-            chat_id = update.effective_chat.id
             user_name = update.effective_user.first_name or "Пользователь"
+            message_text = (
+                f"🎉 Поздравляем, {user_name}!\n\n"
+                f"🎰 Вы выиграли: {prize} $Mori!\n"
+                f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
+                f"💵 Чтобы вывести средства, нажмите кнопку ниже и импортируйте кошелек:"
+            )
+            
+            logger.info(f"Attempting to send message to chat {chat_id}")
+            logger.info(f"Message text: {message_text[:100]}...")
             
             try:
-                await context.bot.send_message(
+                sent_message = await context.bot.send_message(
                     chat_id=chat_id,
-                    text=(
+                    text=message_text,
+                    reply_markup=reply_markup
+                )
+                logger.info(f"✅ Congratulations message sent successfully!")
+                logger.info(f"Message ID: {sent_message.message_id}, Chat ID: {sent_message.chat.id}")
+            except Exception as e:
+                logger.error(f"❌ Error sending congratulations message: {e}", exc_info=True)
+                logger.error(f"Error type: {type(e).__name__}")
+                logger.error(f"Chat ID was: {chat_id}, User ID: {user_id}")
+                
+                # Пытаемся отправить без кнопки
+                try:
+                    logger.info("Trying to send fallback message without button...")
+                    fallback_text = (
                         f"🎉 Поздравляем, {user_name}!\n\n"
                         f"🎰 Вы выиграли: {prize} $Mori!\n"
                         f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                        f"💵 Чтобы вывести средства, нажмите кнопку ниже и импортируйте кошелек:"
-                    ),
-                    reply_markup=reply_markup
-                )
-                logger.info(f"Congratulations message sent to user {user_id} in chat {chat_id}")
-            except Exception as e:
-                logger.error(f"Error sending congratulations message: {e}", exc_info=True)
-                # Пытаемся отправить без кнопки
-                try:
-                    await context.bot.send_message(
-                        chat_id=chat_id,
-                        text=(
-                            f"🎉 Поздравляем, {user_name}!\n\n"
-                            f"🎰 Вы выиграли: {prize} $Mori!\n"
-                            f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                            f"💵 Чтобы вывести средства, перейдите по ссылке и импортируйте кошелек:\n"
-                            f"🔗 {wallet_url}"
-                        )
+                        f"💵 Чтобы вывести средства, перейдите по ссылке и импортируйте кошелек:\n"
+                        f"🔗 {wallet_url}"
                     )
-                    logger.info(f"Fallback message sent to user {user_id}")
+                    sent_message = await context.bot.send_message(
+                        chat_id=chat_id,
+                        text=fallback_text
+                    )
+                    logger.info(f"✅ Fallback message sent successfully! Message ID: {sent_message.message_id}")
                 except Exception as e2:
-                    logger.error(f"Error sending fallback message: {e2}", exc_info=True)
+                    logger.error(f"❌ Error sending fallback message: {e2}", exc_info=True)
+                    logger.error(f"Fallback error type: {type(e2).__name__}")
         
         elif data.get('type') == 'withdraw_balance':
             # Здесь должна быть интеграция с платежной системой для вывода средств
