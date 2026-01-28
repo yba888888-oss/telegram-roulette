@@ -169,14 +169,14 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 0; /* Убрали gap, так как используем margin в .coin */
     padding: 20px 0;
     mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, transparent 100%);
 }
 
 .roulette.spinning {
-    animation: spin-roulette 3.5s cubic-bezier(0.17, 0.67, 0.12, 0.99) forwards;
+    animation: spin-roulette 5s cubic-bezier(0.17, 0.67, 0.12, 0.99) forwards;
 }
 
 @keyframes spin-roulette {
@@ -191,8 +191,8 @@ body::before {
 /* Coin Styles */
 .coin {
     width: 260px;
-    height: 120px;
-    margin: 0 auto;
+    height: 180px;
+    margin: 0 auto 20px auto; /* Добавлен отступ снизу для разделения призов */
     display: flex;
     flex-direction: column;
     align-items: center;

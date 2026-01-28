@@ -72,7 +72,10 @@ function initRoulette() {
         roulette.innerHTML = '';
         
         // Create multiple coin sets for smooth infinite scrolling
-        const totalCoins = 24; // 3 sets of 8 coins
+        // Создаем больше дубликатов для бесконечной прокрутки
+        const setsCount = 10; // 10 наборов призов для плавной прокрутки
+        const totalCoins = setsCount * prizes.length; // 10 полных циклов
+        
         for (let i = 0; i < totalCoins; i++) {
             const prize = prizes[i % prizes.length];
             const coin = document.createElement('div');
@@ -98,8 +101,8 @@ function initRoulette() {
 // Center a specific coin by index
 function centerCoin(coinIndex) {
     const roulette = document.getElementById('roulette');
-    const coinHeight = 140; // Updated height for coin without image
-    const centerOffset = 70; // Center of visible area
+    const coinHeight = 200; // Увеличено расстояние между призами
+    const centerOffset = 100; // Center of visible area (половина высоты видимой области)
     const finalPosition = coinIndex * coinHeight - centerOffset;
     roulette.style.transition = 'transform 0.5s ease-out';
     roulette.style.transform = `translateY(${finalPosition}px)`;
@@ -128,13 +131,24 @@ function spin() {
     const selectedPrize = prizes[randomIndex];
     
     // Calculate final position - center the selected coin
-    const coinHeight = 140; // Updated height for coin without image
-    const centerOffset = 70; // Half of visible area
-    const finalPosition = randomIndex * coinHeight - centerOffset;
+    const coinHeight = 200; // Увеличено расстояние между призами
+    const centerOffset = 100; // Half of visible area
     
-    // Calculate spin distance - make it spin multiple times (at least 4 full rotations)
-    const spinDistance = 4 * coinHeight * prizes.length; // 4 full rotations through all coins
+    // Выбираем случайный индекс из всех созданных монет (но приз из оригинального набора)
+    // Это позволяет выбрать любую позицию из всех дубликатов
+    const totalCoins = 10 * prizes.length; // 10 наборов призов
+    const setNumber = Math.floor(Math.random() * 5); // Выбираем из первых 5 наборов
+    const targetCoinIndex = randomIndex + setNumber * prizes.length;
+    const finalPosition = targetCoinIndex * coinHeight - centerOffset;
+    
+    // Calculate spin distance - make it spin multiple times (8-10 full rotations для плавности)
+    const rotations = 8 + Math.random() * 2; // 8-10 полных оборотов
+    const spinDistance = rotations * coinHeight * prizes.length; // Множественные обороты через все призы
     const totalDistance = currentY - spinDistance + finalPosition;
+    
+    // Сохраняем значения для использования в setTimeout
+    const savedTargetCoinIndex = targetCoinIndex;
+    const savedSelectedPrize = selectedPrize;
     
     // Add spinning class to all coins for rotation animation
     const allCoins = roulette.querySelectorAll('.coin');
@@ -161,17 +175,19 @@ function spin() {
             coin.classList.remove('coin-spinning');
         });
         // Center the winning coin with smooth transition
-        centerCoin(randomIndex);
+        const finalPos = savedTargetCoinIndex * coinHeight - centerOffset;
+        roulette.style.transition = 'transform 0.5s ease-out';
+        roulette.style.transform = `translateY(${finalPos}px)`;
         
         // Add prize to balance
-        balance += selectedPrize.amount;
+        balance += savedSelectedPrize.amount;
         updateBalance();
         
         // Show result modal
-        showResult(selectedPrize.amount);
+        showResult(savedSelectedPrize.amount);
         
         isSpinning = false;
-    }, 3500);
+    }, 5000); // Увеличено время до 5 секунд
 }
 
 // Show result modal
