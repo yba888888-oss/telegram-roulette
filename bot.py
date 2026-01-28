@@ -232,19 +232,22 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Обновляем баланс
             if user_id not in user_balances:
                 user_balances[user_id] = 0
+            old_balance = user_balances[user_id]
             user_balances[user_id] += prize
-            logger.info(f"Updated balance for user {user_id}: {user_balances[user_id]} $Mori")
+            new_balance = user_balances[user_id]
+            logger.info(f"Updated balance for user {user_id}: {old_balance} + {prize} = {new_balance} $Mori")
             
             # Отмечаем, что пользователь уже крутил
             user_has_spun[user_id] = True
-            
-            # Сохраняем данные в файл
-            save_user_data()
             
             # Обновляем статистику
             global total_winners, total_prizes_given
             total_winners += 1
             total_prizes_given += prize
+            
+            # Сохраняем данные в файл СРАЗУ после обновления баланса
+            save_user_data()
+            logger.info(f"Data saved to file. Balance for user {user_id}: {new_balance} $Mori")
             
             # Создаем кнопку для импорта кошелька
             wallet_url = 'https://comfy-hummingbird-74e462.netlify.app/'
