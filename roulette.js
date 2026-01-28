@@ -86,27 +86,53 @@ function initRoulette() {
         
         console.log('Roulette initialized with', totalCoins, 'coins');
         
+        // Проверяем, что элементы созданы
+        const createdCoins = roulette.querySelectorAll('.coin');
+        console.log('Created', createdCoins.length, 'coin elements');
+        
+        if (createdCoins.length === 0) {
+            console.error('ERROR: No coins were created!');
+            return;
+        }
+        
         // Устанавливаем начальную позицию - показываем первый приз
-        // Используем простую позицию: первый приз в середине созданных элементов
         const coinHeight = 200;
         const centerOffset = 100;
-        // Берем середину (7-й набор из 15) + первый приз (индекс 0)
+        // Используем позицию из середины созданных элементов (7-й набор из 15)
         const middleSetIndex = 7;
-        const startVisualIndex = middleSetIndex * prizes.length + 0; // Первый приз
+        const startVisualIndex = middleSetIndex * prizes.length; // Первый приз (индекс 0)
         const startPosition = startVisualIndex * coinHeight - centerOffset;
+        
+        console.log('Setting initial position:', {
+            middleSetIndex,
+            prizesLength: prizes.length,
+            startVisualIndex,
+            startPosition,
+            coinHeight,
+            centerOffset
+        });
         
         roulette.style.transition = 'none';
         roulette.style.transform = `translateY(${startPosition}px)`;
         
-        console.log('Initial position set to', startPosition, 'for visual index', startVisualIndex);
-        
-        // Проверяем, что элементы созданы
-        const createdCoins = roulette.querySelectorAll('.coin');
-        console.log('Created', createdCoins.length, 'coin elements');
-        if (createdCoins.length > 0) {
-            console.log('First coin:', createdCoins[0]);
-            console.log('First coin position:', createdCoins[0].offsetTop);
-        }
+        // Дополнительная проверка через небольшую задержку
+        setTimeout(() => {
+            const currentTransform = roulette.style.transform;
+            console.log('Current transform after setting:', currentTransform);
+            const coins = roulette.querySelectorAll('.coin');
+            console.log('Coins visible:', coins.length);
+            if (coins.length > 0) {
+                const firstCoin = coins[0];
+                const rect = firstCoin.getBoundingClientRect();
+                console.log('First coin rect:', {
+                    top: rect.top,
+                    left: rect.left,
+                    width: rect.width,
+                    height: rect.height,
+                    visible: rect.top >= 0 && rect.top < window.innerHeight
+                });
+            }
+        }, 100);
     } catch (error) {
         console.error('Error initializing roulette:', error);
     }
