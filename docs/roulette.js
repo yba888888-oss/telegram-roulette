@@ -224,14 +224,25 @@ function spin() {
         allCoins.forEach(coin => {
             coin.classList.remove('coin-spinning');
         });
-        // Center the winning coin with smooth transition - всегда точно на призе
-        const finalPos = savedRandomIndex * coinHeight - centerOffset;
+        // Нормализуем позицию сразу после остановки - всегда точно на призе
+        // Используем модульную арифметику для гарантии видимости приза
+        const finalNormalizedIndex = savedRandomIndex % prizes.length;
+        
+        // Используем позицию из середины созданных элементов для гарантии видимости
+        const middleSetIndex = 10; // Середина из 20 наборов
+        const visualIndex = middleSetIndex * prizes.length + finalNormalizedIndex;
+        const finalPos = visualIndex * coinHeight - centerOffset;
+        
         roulette.style.transition = 'transform 0.5s ease-out';
         roulette.style.transform = `translateY(${finalPos}px)`;
         
-        // Убеждаемся, что позиция нормализована (на случай небольших погрешностей)
+        // Дополнительная проверка и нормализация через небольшую задержку
         setTimeout(() => {
-            normalizeRoulettePosition();
+            const normalized = normalizeRoulettePosition();
+            // Если нормализация изменила позицию, обновляем приз
+            if (normalized !== savedRandomIndex) {
+                console.log('Position normalized from', savedRandomIndex, 'to', normalized);
+            }
         }, 600);
         
         // Add prize to balance
