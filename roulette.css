@@ -191,8 +191,8 @@ body::before {
 /* Coin Styles */
 .coin {
     width: 260px;
-    height: 180px;
-    margin: 0 auto 20px auto; /* Добавлен отступ снизу для разделения призов */
+    height: 200px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -200,6 +200,8 @@ body::before {
     position: relative;
     transition: transform 0.3s ease, opacity 0.3s ease;
     flex-shrink: 0;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .coin-content {
@@ -293,6 +295,9 @@ body::before {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     position: relative;
     z-index: 2;
+    color: #fff !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
 .prize-common {
