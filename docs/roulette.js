@@ -184,10 +184,6 @@ function spin() {
     const selectedPrize = prizes[randomIndex];
     console.log('Selected prize:', selectedPrize.amount, 'at index', randomIndex);
     
-    // Calculate final position - center the selected coin
-    const coinHeight = 200; // Увеличено расстояние между призами
-    const centerOffset = 100; // Half of visible area
-    
     // Calculate positions
     const coinHeight = 200;
     const centerOffset = 100;
