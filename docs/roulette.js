@@ -275,11 +275,22 @@ function showResult(amount) {
     modal.classList.add('show');
     
     // Send data to bot - бот проверит, не крутил ли пользователь уже
+    const dataToSend = {
+        type: 'spin_result',
+        prize: amount
+    };
+    
+    console.log('Sending spin result to bot:', dataToSend);
+    
     if (tg.sendData) {
-        tg.sendData(JSON.stringify({
-            type: 'spin_result',
-            prize: amount
-        }));
+        try {
+            tg.sendData(JSON.stringify(dataToSend));
+            console.log('Data sent successfully');
+        } catch (error) {
+            console.error('Error sending data:', error);
+        }
+    } else {
+        console.error('tg.sendData is not available!');
     }
 }
 
