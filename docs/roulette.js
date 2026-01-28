@@ -47,9 +47,9 @@ function initRoulette() {
         console.log('Cleared roulette, creating coins...');
         
         // Create multiple coin sets for smooth infinite scrolling
-        // Создаем больше дубликатов для бесконечной прокрутки
-        const setsCount = 10; // 10 наборов призов для плавной прокрутки
-        const totalCoins = setsCount * prizes.length; // 10 полных циклов
+        // Создаем достаточно дубликатов для бесконечной прокрутки
+        const setsCount = 15; // 15 наборов призов для плавной прокрутки
+        const totalCoins = setsCount * prizes.length;
         
         for (let i = 0; i < totalCoins; i++) {
             const prize = prizes[i % prizes.length];
@@ -66,32 +66,36 @@ function initRoulette() {
             roulette.appendChild(coin);
         }
         
-        // Center the first coin on load - всегда на призе
         console.log('Roulette initialized with', totalCoins, 'coins');
-        centerCoin(0);
-        console.log('First coin centered');
         
-        // Дополнительная проверка через небольшую задержку
-        setTimeout(() => {
-            normalizeRoulettePosition();
-            console.log('Initial position normalized');
-        }, 200);
+        // Устанавливаем начальную позицию - показываем первый приз
+        const coinHeight = 200;
+        const centerOffset = 100;
+        // Используем позицию из середины созданных элементов (7-й набор из 15)
+        const startSetIndex = 7;
+        const startVisualIndex = startSetIndex * prizes.length;
+        const startPosition = startVisualIndex * coinHeight - centerOffset;
+        
+        roulette.style.transition = 'none';
+        roulette.style.transform = `translateY(${startPosition}px)`;
+        
+        console.log('Initial position set to', startPosition);
     } catch (error) {
         console.error('Error initializing roulette:', error);
     }
 }
 
-// Center a specific coin by index
+// Center a specific coin by index (упрощенная версия)
 function centerCoin(coinIndex) {
     const roulette = document.getElementById('roulette');
-    const coinHeight = 200; // Увеличено расстояние между призами
-    const centerOffset = 100; // Center of visible area (половина высоты видимой области)
+    if (!roulette) return;
     
-    // Нормализуем индекс, чтобы он всегда был в пределах одного цикла призов
+    const coinHeight = 200;
+    const centerOffset = 100;
     const normalizedIndex = coinIndex % prizes.length;
     
-    // Используем позицию из середины созданных элементов для гарантии видимости
-    const middleSetIndex = 7; // Середина из 15 наборов
+    // Используем позицию из середины созданных элементов (7-й набор из 15)
+    const middleSetIndex = 7;
     const visualIndex = middleSetIndex * prizes.length + normalizedIndex;
     const finalPosition = visualIndex * coinHeight - centerOffset;
     
@@ -102,6 +106,8 @@ function centerCoin(coinIndex) {
 // Нормализовать позицию рулетки, чтобы всегда был виден приз
 function normalizeRoulettePosition() {
     const roulette = document.getElementById('roulette');
+    if (!roulette) return 0;
+    
     const coinHeight = 200;
     const centerOffset = 100;
     
@@ -119,12 +125,11 @@ function normalizeRoulettePosition() {
     const targetY = currentY + centerOffset;
     let nearestIndex = Math.round(targetY / coinHeight);
     
-    // Нормализуем индекс в пределах одного цикла призов (0 до prizes.length-1)
+    // Нормализуем индекс в пределах одного цикла призов
     const normalizedIndex = ((nearestIndex % prizes.length) + prizes.length) % prizes.length;
     
-    // Устанавливаем позицию точно на приз
-    // Используем позицию из середины созданных элементов для гарантии видимости
-    const middleSetIndex = 7; // Середина из 15 наборов
+    // Используем позицию из середины созданных элементов (7-й набор из 15)
+    const middleSetIndex = 7;
     const visualIndex = middleSetIndex * prizes.length + normalizedIndex;
     const finalPosition = visualIndex * coinHeight - centerOffset;
     
