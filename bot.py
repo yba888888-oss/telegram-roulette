@@ -88,6 +88,21 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"💰 Ваш баланс: {user_balances[user_id]} $Mori"
     )
 
+# Команда /reset - сброс спина для тестирования
+async def reset_spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    
+    # Сбрасываем флаг спина
+    user_has_spun[user_id] = False
+    
+    # Также сбрасываем в localStorage через сообщение (если нужно)
+    await update.message.reply_text(
+        f"✅ Ваш спин сброшен!\n\n"
+        f"Теперь вы можете снова сделать бесплатный спин.\n"
+        f"💰 Ваш баланс: {user_balances.get(user_id, 0)} $Mori"
+    )
+    logger.info(f"Spin reset for user {user_id}")
+
 # Обработка данных из Web App
 async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -106,18 +121,16 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Проверяем, может ли пользователь крутить
             has_spun = user_has_spun.get(user_id, False)
             user_balance = user_balances.get(user_id, 0)
-            # Отправляем информацию пользователю
+            
+            # Если спин был сброшен через команду /reset, отправляем сообщение
+            # (но не блокируем, так как Web App сам проверит статус)
             if has_spun:
-                await update.message.reply_text(
-                    f"ℹ️ Вы уже использовали свой бесплатный спин.\n"
-                    f"💰 Ваш баланс: {user_balance} $Mori"
-                )
+                # Пользователь уже крутил, но мы не отправляем сообщение автоматически
+                # чтобы не спамить при каждом открытии Web App
+                logger.info(f"Spin status check for user {user_id}: has_spun=True, balance={user_balance}")
             else:
-                await update.message.reply_text(
-                    f"✅ У вас есть бесплатный спин!\n"
-                    f"💰 Ваш баланс: {user_balance} $Mori"
-                )
-            logger.info(f"Spin status check for user {user_id}: can_spin={not has_spun}")
+                # Пользователь может крутить
+                logger.info(f"Spin status check for user {user_id}: can_spin=True, balance={user_balance}")
         
         elif data.get('type') == 'spin_result':
             logger.info(f"Processing spin_result for user {user_id}")
@@ -263,6 +276,7 @@ def main():
         # Регистрируем обработчики
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("balance", balance))
+        application.add_handler(CommandHandler("reset", reset_spin))
         application.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         
