@@ -34,7 +34,7 @@ const prizes = [
 let balance = 0;
 let isSpinning = false;
 
-// Initialize roulette with Mori coins
+// Initialize roulette with prizes
 function initRoulette() {
     try {
         const roulette = document.getElementById('roulette');
@@ -44,93 +44,55 @@ function initRoulette() {
         }
         
         roulette.innerHTML = '';
-        console.log('Cleared roulette, creating coins...');
+        console.log('Initializing roulette...');
         
-        // Create multiple coin sets for smooth infinite scrolling
-        // Создаем достаточно дубликатов для бесконечной прокрутки
-        const setsCount = 15; // 15 наборов призов для плавной прокрутки
-        const totalCoins = setsCount * prizes.length;
+        // Create multiple sets of prizes for infinite scrolling
+        const setsCount = 10; // 10 sets for smooth scrolling
+        const totalPrizes = setsCount * prizes.length;
         
-        for (let i = 0; i < totalCoins; i++) {
+        for (let i = 0; i < totalPrizes; i++) {
             const prize = prizes[i % prizes.length];
-            const coin = document.createElement('div');
-            coin.className = `coin coin-${prize.type}`;
-            coin.style.setProperty('--coin-index', i);
+            const prizeElement = document.createElement('div');
+            prizeElement.className = `coin coin-${prize.type}`;
             
-            coin.innerHTML = `
+            prizeElement.innerHTML = `
                 <div class="coin-content">
                     <div class="prize-amount prize-${prize.type}">${prize.amount} $Mori</div>
                 </div>
             `;
             
-            roulette.appendChild(coin);
+            roulette.appendChild(prizeElement);
         }
         
-        console.log('Roulette initialized with', totalCoins, 'coins');
+        console.log('Created', totalPrizes, 'prize elements');
         
-        // Проверяем, что элементы созданы
-        const createdCoins = roulette.querySelectorAll('.coin');
-        console.log('Created', createdCoins.length, 'coin elements');
-        
-        if (createdCoins.length === 0) {
-            console.error('ERROR: No coins were created!');
-            return;
-        }
-        
-        // Устанавливаем начальную позицию - показываем первый приз
+        // Set initial position to show first prize
         const coinHeight = 200;
         const centerOffset = 100;
-        // Используем позицию из середины созданных элементов (7-й набор из 15)
-        const middleSetIndex = 7;
-        const startVisualIndex = middleSetIndex * prizes.length; // Первый приз (индекс 0)
-        const startPosition = startVisualIndex * coinHeight - centerOffset;
-        
-        console.log('Setting initial position:', {
-            middleSetIndex,
-            prizesLength: prizes.length,
-            startVisualIndex,
-            startPosition,
-            coinHeight,
-            centerOffset
-        });
+        // Start from middle set (5th set out of 10)
+        const startSetIndex = 5;
+        const startPosition = startSetIndex * prizes.length * coinHeight - centerOffset;
         
         roulette.style.transition = 'none';
         roulette.style.transform = `translateY(${startPosition}px)`;
         
-        // Дополнительная проверка через небольшую задержку
-        setTimeout(() => {
-            const currentTransform = roulette.style.transform;
-            console.log('Current transform after setting:', currentTransform);
-            const coins = roulette.querySelectorAll('.coin');
-            console.log('Coins visible:', coins.length);
-            if (coins.length > 0) {
-                const firstCoin = coins[0];
-                const rect = firstCoin.getBoundingClientRect();
-                console.log('First coin rect:', {
-                    top: rect.top,
-                    left: rect.left,
-                    width: rect.width,
-                    height: rect.height,
-                    visible: rect.top >= 0 && rect.top < window.innerHeight
-                });
-            }
-        }, 100);
+        console.log('Initial position set to', startPosition);
     } catch (error) {
         console.error('Error initializing roulette:', error);
     }
 }
 
-// Center a specific coin by index (упрощенная версия)
-function centerCoin(coinIndex) {
+// Center a specific prize by index
+function centerPrize(prizeIndex) {
     const roulette = document.getElementById('roulette');
     if (!roulette) return;
     
     const coinHeight = 200;
     const centerOffset = 100;
-    const normalizedIndex = coinIndex % prizes.length;
+    const normalizedIndex = prizeIndex % prizes.length;
     
-    // Используем позицию из середины созданных элементов (7-й набор из 15)
-    const middleSetIndex = 7;
+    // Use position from middle set (5th set out of 10)
+    const middleSetIndex = 5;
     const visualIndex = middleSetIndex * prizes.length + normalizedIndex;
     const finalPosition = visualIndex * coinHeight - centerOffset;
     
@@ -138,46 +100,10 @@ function centerCoin(coinIndex) {
     roulette.style.transform = `translateY(${finalPosition}px)`;
 }
 
-// Нормализовать позицию рулетки, чтобы всегда был виден приз
-function normalizeRoulettePosition() {
-    const roulette = document.getElementById('roulette');
-    if (!roulette) return 0;
-    
-    const coinHeight = 200;
-    const centerOffset = 100;
-    
-    // Получаем текущую позицию
-    const currentTransform = roulette.style.transform;
-    let currentY = 0;
-    if (currentTransform) {
-        const match = currentTransform.match(/translateY\(([^)]+)\)/);
-        if (match) {
-            currentY = parseFloat(match[1]) || 0;
-        }
-    }
-    
-    // Вычисляем ближайший индекс приза
-    const targetY = currentY + centerOffset;
-    let nearestIndex = Math.round(targetY / coinHeight);
-    
-    // Нормализуем индекс в пределах одного цикла призов
-    const normalizedIndex = ((nearestIndex % prizes.length) + prizes.length) % prizes.length;
-    
-    // Используем позицию из середины созданных элементов (7-й набор из 15)
-    const middleSetIndex = 7;
-    const visualIndex = middleSetIndex * prizes.length + normalizedIndex;
-    const finalPosition = visualIndex * coinHeight - centerOffset;
-    
-    roulette.style.transition = 'transform 0.3s ease-out';
-    roulette.style.transform = `translateY(${finalPosition}px)`;
-    
-    return normalizedIndex;
-}
-
 // Spin function
 function spin() {
     if (isSpinning) {
-        console.log('Already spinning, ignoring');
+        console.log('Already spinning');
         return;
     }
     
@@ -186,16 +112,16 @@ function spin() {
     
     const roulette = document.getElementById('roulette');
     if (!roulette) {
-        console.error('Roulette element not found!');
+        console.error('Roulette not found');
         isSpinning = false;
         return;
     }
     
-    const allCoins = roulette.querySelectorAll('.coin');
-    console.log('Found', allCoins.length, 'coins in roulette');
+    const allPrizes = roulette.querySelectorAll('.coin');
+    console.log('Found', allPrizes.length, 'prizes');
     
-    if (allCoins.length === 0) {
-        console.error('No coins found! Reinitializing...');
+    if (allPrizes.length === 0) {
+        console.error('No prizes found! Reinitializing...');
         initRoulette();
         setTimeout(() => {
             isSpinning = false;
@@ -203,6 +129,16 @@ function spin() {
         }, 100);
         return;
     }
+    
+    // Random prize selection
+    const randomIndex = Math.floor(Math.random() * prizes.length);
+    const selectedPrize = prizes[randomIndex];
+    console.log('Selected prize:', selectedPrize.amount, 'at index', randomIndex);
+    
+    // Calculate positions
+    const coinHeight = 200;
+    const centerOffset = 100;
+    const middleSetIndex = 5; // Middle set out of 10
     
     // Get current position
     const currentTransform = roulette.style.transform;
@@ -214,53 +150,40 @@ function spin() {
         }
     }
     
-    // Random prize selection
-    const randomIndex = Math.floor(Math.random() * prizes.length);
-    const selectedPrize = prizes[randomIndex];
-    console.log('Selected prize:', selectedPrize.amount, 'at index', randomIndex);
-    
-    // Calculate positions
-    const coinHeight = 200;
-    const centerOffset = 100;
-    const middleSetIndex = 7; // Середина из 15 наборов
-    
-    // Всегда начинаем с позиции в середине созданных элементов
-    // Определяем текущий индекс приза
+    // Calculate current prize index
     const currentNormalizedY = currentY + centerOffset;
     const currentCoinIndex = Math.round(currentNormalizedY / coinHeight);
     const currentPrizeIndex = ((currentCoinIndex % prizes.length) + prizes.length) % prizes.length;
     
-    // Начальная позиция - всегда в середине созданных элементов
+    // Start position - always in middle set
     const startVisualIndex = middleSetIndex * prizes.length + currentPrizeIndex;
     const startY = startVisualIndex * coinHeight - centerOffset;
     
-    // Финальная позиция - выбранный приз в середине созданных элементов
+    // End position - selected prize in middle set
     const endVisualIndex = middleSetIndex * prizes.length + randomIndex;
     const endY = endVisualIndex * coinHeight - centerOffset;
     
-    // Вычисляем количество оборотов (8-10 полных циклов)
+    // Calculate spin distance (8-10 full rotations)
     const rotations = 8 + Math.random() * 2;
     const fullCycles = Math.floor(rotations);
     
-    // Вычисляем расстояние прокрутки
-    // Разница между начальным и конечным индексом в пределах одного цикла
+    // Calculate distance difference
     let indexDiff = randomIndex - currentPrizeIndex;
     if (indexDiff < 0) {
         indexDiff += prizes.length;
     }
     
-    // Общее расстояние = полные циклы + разница до финального приза
+    // Total spin distance
     const totalSpinDistance = (fullCycles * prizes.length + indexDiff) * coinHeight;
     const finalY = startY - totalSpinDistance;
     
-    // Сохраняем значения для использования в setTimeout
+    // Save values for setTimeout
     const savedRandomIndex = randomIndex;
     const savedSelectedPrize = selectedPrize;
     
-    // Add spinning class to all coins for rotation animation
-    const allCoins = roulette.querySelectorAll('.coin');
-    allCoins.forEach(coin => {
-        coin.classList.add('coin-spinning');
+    // Add spinning animation
+    allPrizes.forEach(prize => {
+        prize.classList.add('coin-spinning');
     });
     
     // Remove transition for animation
@@ -270,45 +193,31 @@ function spin() {
     // Force reflow
     void roulette.offsetHeight;
     
-    // Add spinning class for animation
+    // Add spinning class
     roulette.classList.add('spinning');
     roulette.style.setProperty('--spin-start', `${startY}px`);
     roulette.style.setProperty('--spin-end', `${finalY}px`);
     
     setTimeout(() => {
         roulette.classList.remove('spinning');
-        // Remove spinning class from coins
-        allCoins.forEach(coin => {
-            coin.classList.remove('coin-spinning');
+        allPrizes.forEach(prize => {
+            prize.classList.remove('coin-spinning');
         });
-        // Устанавливаем финальную позицию точно на выбранный приз
-        const coinHeight = 200;
-        const centerOffset = 100;
-        const middleSetIndex = 10;
-        const finalNormalizedIndex = savedRandomIndex % prizes.length;
-        const visualIndex = middleSetIndex * prizes.length + finalNormalizedIndex;
-        const finalPos = visualIndex * coinHeight - centerOffset;
         
-        console.log('Setting final position to', finalPos, 'for prize index', savedRandomIndex);
+        // Set final position
         roulette.style.transition = 'transform 0.5s ease-out';
-        roulette.style.transform = `translateY(${finalPos}px)`;
-        
-        // Дополнительная нормализация через небольшую задержку
-        setTimeout(() => {
-            normalizeRoulettePosition();
-        }, 600);
+        roulette.style.transform = `translateY(${endY}px)`;
         
         // Add prize to balance
         balance += savedSelectedPrize.amount;
         updateBalance();
-        console.log('Balance updated to', balance);
         
         // Show result modal
         showResult(savedSelectedPrize.amount);
-        console.log('Spin completed!');
         
         isSpinning = false;
-    }, 5000); // Увеличено время до 5 секунд
+        console.log('Spin completed!');
+    }, 5000);
 }
 
 // Show result modal
@@ -336,18 +245,13 @@ function closeModal() {
 // Update balance display
 function updateBalance() {
     const balanceElement = document.getElementById('balance');
-    balanceElement.textContent = `${Math.floor(balance)} $Mori`;
-}
-
-// Update spin button text
-function updateSpinButton() {
-    const spinBtn = document.getElementById('spinBtn');
-    spinBtn.textContent = 'Бесплатный спин';
+    if (balanceElement) {
+        balanceElement.textContent = `${Math.floor(balance)} $Mori`;
+    }
 }
 
 // Withdraw balance
 function withdrawBalance() {
-    // Send data to bot to withdraw balance
     if (tg.sendData) {
         tg.sendData(JSON.stringify({
             type: 'withdraw_balance',
@@ -359,40 +263,36 @@ function withdrawBalance() {
 }
 
 // Event listeners
-document.getElementById('spinBtn').addEventListener('click', spin);
-document.getElementById('withdrawBtn').addEventListener('click', withdrawBalance);
-document.getElementById('closeModal').addEventListener('click', closeModal);
-document.getElementById('backBtn').addEventListener('click', () => {
-    if (tg.close) {
-        tg.close();
-    }
-});
-
-// Get user data from Telegram
-if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-    const user = tg.initDataUnsafe.user;
-    console.log('User:', user);
-}
-
-// Initialize on load
-function initializeApp() {
-    console.log('Initializing app...');
-    try {
-        initRoulette();
-        updateBalance();
-        console.log('App initialized successfully');
-    } catch (error) {
-        console.error('Initialization error:', error);
-    }
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
-    initializeApp();
+    
+    // Initialize roulette
+    initRoulette();
+    updateBalance();
+    
+    // Add event listeners
+    const spinBtn = document.getElementById('spinBtn');
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    const closeModalBtn = document.getElementById('closeModal');
+    const backBtn = document.getElementById('backBtn');
+    
+    if (spinBtn) spinBtn.addEventListener('click', spin);
+    if (withdrawBtn) withdrawBtn.addEventListener('click', withdrawBalance);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            if (tg.close) {
+                tg.close();
+            }
+        });
+    }
+    
+    console.log('Event listeners attached');
 });
 
-// Also try to initialize if DOM is already loaded
+// Also initialize if DOM is already loaded
 if (document.readyState !== 'loading') {
     console.log('DOM already loaded, initializing...');
-    initializeApp();
+    initRoulette();
+    updateBalance();
 }
