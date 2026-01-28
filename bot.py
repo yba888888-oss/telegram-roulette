@@ -363,13 +363,16 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             if user_id not in user_balances:
                 user_balances[user_id] = 0
             
+            old_balance = user_balances[user_id]
+            
             # Обновляем баланс, если баланс из Web App больше (берем максимальное значение)
-            if web_app_balance > user_balances[user_id]:
-                logger.info(f"Syncing balance for user {user_id}: {user_balances[user_id]} -> {web_app_balance}")
+            if web_app_balance > old_balance:
+                logger.info(f"Syncing balance for user {user_id}: {old_balance} -> {web_app_balance}")
                 user_balances[user_id] = web_app_balance
                 save_user_data()
+                logger.info(f"Balance synced and saved: {user_balances[user_id]} $Mori")
             else:
-                logger.info(f"Balance sync for user {user_id}: server={user_balances[user_id]}, web_app={web_app_balance} (no update needed)")
+                logger.info(f"Balance sync for user {user_id}: server={old_balance}, web_app={web_app_balance} (no update needed)")
         
         elif data.get('type') == 'get_balance':
             # Отправляем баланс обратно в веб-приложение
