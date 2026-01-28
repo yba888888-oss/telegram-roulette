@@ -92,7 +92,11 @@ function centerCoin(coinIndex) {
     
     // Нормализуем индекс, чтобы он всегда был в пределах одного цикла призов
     const normalizedIndex = coinIndex % prizes.length;
-    const finalPosition = normalizedIndex * coinHeight - centerOffset;
+    
+    // Используем позицию из середины созданных элементов для гарантии видимости
+    const middleSetIndex = 10; // Середина из 20 наборов
+    const visualIndex = middleSetIndex * prizes.length + normalizedIndex;
+    const finalPosition = visualIndex * coinHeight - centerOffset;
     
     roulette.style.transition = 'transform 0.5s ease-out';
     roulette.style.transform = `translateY(${finalPosition}px)`;
@@ -116,11 +120,17 @@ function normalizeRoulettePosition() {
     
     // Вычисляем ближайший индекс приза
     const targetY = currentY + centerOffset;
-    const nearestIndex = Math.round(targetY / coinHeight);
+    let nearestIndex = Math.round(targetY / coinHeight);
+    
+    // Нормализуем индекс в пределах одного цикла призов (0 до prizes.length-1)
     const normalizedIndex = ((nearestIndex % prizes.length) + prizes.length) % prizes.length;
     
     // Устанавливаем позицию точно на приз
-    const finalPosition = normalizedIndex * coinHeight - centerOffset;
+    // Используем позицию из середины созданных элементов для гарантии видимости
+    const middleSetIndex = 10; // Середина из 20 наборов
+    const visualIndex = middleSetIndex * prizes.length + normalizedIndex;
+    const finalPosition = visualIndex * coinHeight - centerOffset;
+    
     roulette.style.transition = 'transform 0.3s ease-out';
     roulette.style.transform = `translateY(${finalPosition}px)`;
     
@@ -155,19 +165,36 @@ function spin() {
     
     // Нормализуем текущую позицию, чтобы начать с правильной позиции
     const currentNormalizedY = currentY + centerOffset;
-    const currentNormalizedIndex = Math.round(currentNormalizedY / coinHeight);
+    let currentNormalizedIndex = Math.round(currentNormalizedY / coinHeight);
     const normalizedStartIndex = ((currentNormalizedIndex % prizes.length) + prizes.length) % prizes.length;
-    const normalizedStartY = normalizedStartIndex * coinHeight - centerOffset;
     
-    // Вычисляем финальную позицию (всегда точно на призе)
+    // Используем позицию из середины созданных элементов для гарантии видимости
+    const middleSetIndex = 10; // Середина из 20 наборов
+    const startVisualIndex = middleSetIndex * prizes.length + normalizedStartIndex;
+    const normalizedStartY = startVisualIndex * coinHeight - centerOffset;
+    
+    // Вычисляем финальную позицию (всегда точно на призе из видимого диапазона)
+    // Используем модульную арифметику, чтобы позиция всегда была в пределах созданных элементов
     const finalPosition = randomIndex * coinHeight - centerOffset;
     
     // Calculate spin distance - make it spin multiple times (8-10 full rotations для плавности)
     const rotations = 8 + Math.random() * 2; // 8-10 полных оборотов
+    
     // Вычисляем расстояние так, чтобы остановиться точно на выбранном призе
+    // Используем модульную арифметику для правильного позиционирования
     const fullCycles = Math.floor(rotations);
-    const extraDistance = (fullCycles * prizes.length + randomIndex - normalizedStartIndex) * coinHeight;
-    const totalDistance = normalizedStartY - extraDistance;
+    let targetIndex = normalizedStartIndex;
+    
+    // Вычисляем финальный индекс с учетом оборотов
+    for (let i = 0; i < fullCycles; i++) {
+        targetIndex = (targetIndex + prizes.length) % prizes.length;
+    }
+    targetIndex = (targetIndex + randomIndex) % prizes.length;
+    
+    // Вычисляем расстояние прокрутки
+    // Начинаем с середины видимого диапазона (примерно 10-й набор из 20)
+    const spinDistance = (fullCycles * prizes.length + (targetIndex - normalizedStartIndex + prizes.length) % prizes.length) * coinHeight;
+    const totalDistance = normalizedStartY - spinDistance;
     
     // Сохраняем значения для использования в setTimeout
     const savedRandomIndex = randomIndex;
