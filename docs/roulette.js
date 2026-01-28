@@ -73,12 +73,9 @@ function initRoulette() {
         }
         
         // Center the first coin on load - всегда на призе
+        console.log('Roulette initialized with', totalCoins, 'coins');
         centerCoin(0);
-        
-        // Убеждаемся, что позиция нормализована после загрузки
-        setTimeout(() => {
-            normalizeRoulettePosition();
-        }, 100);
+        console.log('First coin centered');
     } catch (error) {
         console.error('Error initializing roulette:', error);
     }
@@ -139,11 +136,33 @@ function normalizeRoulettePosition() {
 
 // Spin function
 function spin() {
-    if (isSpinning) return;
+    if (isSpinning) {
+        console.log('Already spinning, ignoring');
+        return;
+    }
     
     isSpinning = true;
+    console.log('Starting spin...');
     
     const roulette = document.getElementById('roulette');
+    if (!roulette) {
+        console.error('Roulette element not found!');
+        isSpinning = false;
+        return;
+    }
+    
+    const allCoins = roulette.querySelectorAll('.coin');
+    console.log('Found', allCoins.length, 'coins in roulette');
+    
+    if (allCoins.length === 0) {
+        console.error('No coins found! Reinitializing...');
+        initRoulette();
+        setTimeout(() => {
+            isSpinning = false;
+            spin();
+        }, 100);
+        return;
+    }
     
     // Get current position
     const currentTransform = roulette.style.transform;
@@ -158,6 +177,7 @@ function spin() {
     // Random prize selection
     const randomIndex = Math.floor(Math.random() * prizes.length);
     const selectedPrize = prizes[randomIndex];
+    console.log('Selected prize:', selectedPrize.amount, 'at index', randomIndex);
     
     // Calculate final position - center the selected coin
     const coinHeight = 200; // Увеличено расстояние между призами
@@ -217,29 +237,26 @@ function spin() {
         allCoins.forEach(coin => {
             coin.classList.remove('coin-spinning');
         });
-        // Нормализуем позицию сразу после остановки - всегда точно на призе
-        // Используем модульную арифметику для гарантии видимости приза
+        // Устанавливаем финальную позицию точно на выбранный приз
+        const coinHeight = 200;
+        const centerOffset = 100;
+        const middleSetIndex = 10;
         const finalNormalizedIndex = savedRandomIndex % prizes.length;
-        
-        // Используем позицию из середины созданных элементов для гарантии видимости
-        const middleSetIndex = 10; // Середина из 20 наборов
         const visualIndex = middleSetIndex * prizes.length + finalNormalizedIndex;
         const finalPos = visualIndex * coinHeight - centerOffset;
         
+        console.log('Setting final position to', finalPos, 'for prize index', savedRandomIndex);
         roulette.style.transition = 'transform 0.5s ease-out';
         roulette.style.transform = `translateY(${finalPos}px)`;
-        
-        // Дополнительная проверка и нормализация через небольшую задержку
-        setTimeout(() => {
-            normalizeRoulettePosition();
-        }, 600);
         
         // Add prize to balance
         balance += savedSelectedPrize.amount;
         updateBalance();
+        console.log('Balance updated to', balance);
         
         // Show result modal
         showResult(savedSelectedPrize.amount);
+        console.log('Spin completed!');
         
         isSpinning = false;
     }, 5000); // Увеличено время до 5 секунд
