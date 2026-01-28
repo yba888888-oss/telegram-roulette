@@ -95,7 +95,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Используем effective_message для большей надежности
         message = update.effective_message
+        
+        # Загружаем актуальный баланс из файла перед показом
+        # (на случай, если данные были изменены в другом процессе)
+        if DATA_FILE.exists():
+            try:
+                with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                    file_data = json.load(f)
+                    file_balances = file_data.get('balances', {})
+                    # Конвертируем ключи из строк в int
+                    file_balances = {int(k): v for k, v in file_balances.items()}
+                    if user_id in file_balances:
+                        user_balances[user_id] = file_balances[user_id]
+                        logger.info(f"Loaded balance from file for user {user_id}: {user_balances[user_id]} $Mori")
+            except Exception as e:
+                logger.error(f"Error loading balance from file: {e}")
+        
         current_balance = user_balances.get(user_id, 0)
+        logger.info(f"Showing balance for user {user_id} in /start: {current_balance} $Mori")
         
         if message:
             if has_spun:
