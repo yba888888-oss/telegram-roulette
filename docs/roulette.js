@@ -69,17 +69,26 @@ function initRoulette() {
         console.log('Roulette initialized with', totalCoins, 'coins');
         
         // Устанавливаем начальную позицию - показываем первый приз
+        // Используем простую позицию: первый приз в середине созданных элементов
         const coinHeight = 200;
         const centerOffset = 100;
-        // Используем позицию из середины созданных элементов (7-й набор из 15)
-        const startSetIndex = 7;
-        const startVisualIndex = startSetIndex * prizes.length;
+        // Берем середину (7-й набор из 15) + первый приз (индекс 0)
+        const middleSetIndex = 7;
+        const startVisualIndex = middleSetIndex * prizes.length + 0; // Первый приз
         const startPosition = startVisualIndex * coinHeight - centerOffset;
         
         roulette.style.transition = 'none';
         roulette.style.transform = `translateY(${startPosition}px)`;
         
-        console.log('Initial position set to', startPosition);
+        console.log('Initial position set to', startPosition, 'for visual index', startVisualIndex);
+        
+        // Проверяем, что элементы созданы
+        const createdCoins = roulette.querySelectorAll('.coin');
+        console.log('Created', createdCoins.length, 'coin elements');
+        if (createdCoins.length > 0) {
+            console.log('First coin:', createdCoins[0]);
+            console.log('First coin position:', createdCoins[0].offsetTop);
+        }
     } catch (error) {
         console.error('Error initializing roulette:', error);
     }
