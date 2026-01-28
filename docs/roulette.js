@@ -109,13 +109,7 @@ function centerPrize(prizeIndex) {
 
 // Check if user can spin
 function checkSpinStatus() {
-    if (tg.sendData) {
-        tg.sendData(JSON.stringify({
-            type: 'check_spin_status'
-        }));
-    }
-    
-    // Проверяем в localStorage (не надежно, но для UI)
+    // Проверяем в localStorage
     const hasSpunLocal = localStorage.getItem('hasSpun');
     if (hasSpunLocal === 'true') {
         canSpin = false;
@@ -124,7 +118,25 @@ function checkSpinStatus() {
             spinBtn.textContent = 'Спин использован';
             spinBtn.style.opacity = '0.5';
             spinBtn.style.cursor = 'not-allowed';
+            spinBtn.disabled = true;
         }
+    } else {
+        // Если в localStorage нет флага, разрешаем спин
+        canSpin = true;
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.textContent = 'Бесплатный спин';
+            spinBtn.style.opacity = '1';
+            spinBtn.style.cursor = 'pointer';
+            spinBtn.disabled = false;
+        }
+    }
+    
+    // Отправляем запрос боту для проверки статуса (для логирования)
+    if (tg.sendData) {
+        tg.sendData(JSON.stringify({
+            type: 'check_spin_status'
+        }));
     }
 }
 
