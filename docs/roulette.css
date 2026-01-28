@@ -115,50 +115,50 @@ body::before {
 /* Indicator Arrows */
 .indicator-arrow {
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 50%;
+    transform: translateY(-50%);
     width: 0;
     height: 0;
     z-index: 10;
     filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.5));
 }
 
-.top-arrow {
-    top: 20px;
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-top: 30px solid #FFD700;
+.left-arrow {
+    left: 20px;
+    border-top: 20px solid transparent;
+    border-bottom: 20px solid transparent;
+    border-right: 30px solid #FFD700;
 }
 
-.top-arrow::after {
+.left-arrow::after {
     content: '';
     position: absolute;
-    top: -35px;
-    left: -15px;
+    left: -35px;
+    top: -15px;
     width: 0;
     height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-top: 20px solid #FFA500;
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    border-right: 20px solid #FFA500;
 }
 
-.bottom-arrow {
-    bottom: 20px;
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-bottom: 30px solid #FFD700;
+.right-arrow {
+    right: 20px;
+    border-top: 20px solid transparent;
+    border-bottom: 20px solid transparent;
+    border-left: 30px solid #FFD700;
 }
 
-.bottom-arrow::after {
+.right-arrow::after {
     content: '';
     position: absolute;
-    bottom: -35px;
-    left: -15px;
+    right: -35px;
+    top: -15px;
     width: 0;
     height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-bottom: 20px solid #FFA500;
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    border-left: 20px solid #FFA500;
 }
 
 /* The Roulette */
