@@ -262,14 +262,9 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                 logger.info(f"✅ Congratulations message sent successfully!")
                 logger.info(f"Message ID: {sent_message.message_id}, Chat ID: {sent_message.chat.id}")
                 
-                # Также отправляем отдельное сообщение с балансом для синхронизации
-                try:
-                    await context.bot.send_message(
-                        chat_id=chat_id,
-                        text=f"💾 Баланс сохранен: {current_balance} $Mori"
-                    )
-                except:
-                    pass  # Игнорируем ошибки дополнительного сообщения
+                # Сохраняем данные после успешной отправки сообщения
+                save_user_data()
+                logger.info(f"User data saved: balance={current_balance}, has_spun=True")
             except Exception as e:
                 logger.error(f"❌ Error sending congratulations message: {e}", exc_info=True)
                 logger.error(f"Error type: {type(e).__name__}")
