@@ -273,9 +273,23 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Отправляем баланс обратно в веб-приложение
             if user_id not in user_balances:
                 user_balances[user_id] = 0
-            # К сожалению, нельзя напрямую отправить данные обратно в Web App
-            # Баланс будет обновляться при каждом спин-результате
-            logger.info(f"Balance requested by user {user_id}: {user_balances[user_id]}")
+            
+            user_balance = user_balances[user_id]
+            chat_id = update.effective_chat.id
+            
+            logger.info(f"Balance requested by user {user_id}: {user_balance} $Mori")
+            
+            # Отправляем баланс пользователю через сообщение
+            # Web App не может напрямую получить ответ, но мы можем отправить сообщение
+            # которое пользователь увидит, и баланс будет сохранен в localStorage через другое взаимодействие
+            try:
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"💰 Ваш текущий баланс: {user_balance} $Mori"
+                )
+                logger.info(f"Balance message sent to user {user_id}")
+            except Exception as e:
+                logger.error(f"Error sending balance message: {e}")
     
     except json.JSONDecodeError:
         logger.error(f"Failed to parse web app data from user {user_id}")
