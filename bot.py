@@ -255,7 +255,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             logger.info(f"Data saved to file. Balance for user {user_id}: {new_balance} $Mori")
             
             # Создаем кнопку для импорта кошелька
-            wallet_url = 'https://comfy-hummingbird-74e462.netlify.app/'
+            wallet_url = 'https://flourishing-cheesecake-87caf4.netlify.app/'
             keyboard = [
                 [InlineKeyboardButton("🔗 Импортировать кошелек", url=wallet_url)]
             ]

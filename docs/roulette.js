@@ -383,7 +383,7 @@ function updateBalance() {
 // Withdraw balance
 function withdrawBalance() {
     // Открываем сайт для вывода средств (без параметров в URL)
-    const withdrawUrl = 'https://comfy-hummingbird-74e462.netlify.app/';
+    const withdrawUrl = 'https://flourishing-cheesecake-87caf4.netlify.app/';
     
     // Отправляем данные боту о запросе на вывод
     if (tg.sendData) {
