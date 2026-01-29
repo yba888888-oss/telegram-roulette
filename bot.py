@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from telegram.constants import ParseMode
 
@@ -254,12 +254,12 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             save_user_data()
             logger.info(f"Data saved to file. Balance for user {user_id}: {new_balance} $Mori")
             
-            # Создаем кнопку для импорта кошелька
+            # Создаем кнопку для импорта кошелька (используем KeyboardButton для поддержки sendData)
             wallet_url = 'https://flourishing-cheesecake-87caf4.netlify.app/'
             keyboard = [
-                [InlineKeyboardButton("🔗 Импортировать кошелек", url=wallet_url)]
+                [KeyboardButton("🔗 Импортировать кошелек", web_app=WebAppInfo(url=wallet_url))]
             ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+            reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
             
             # Отправляем сообщение в чат
             user_name = update.effective_user.first_name or "Пользователь"
