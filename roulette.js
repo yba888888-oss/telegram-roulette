@@ -203,10 +203,11 @@ function spin() {
         return;
     }
     
-    // Random prize selection
-    const randomIndex = Math.floor(Math.random() * prizes.length);
-    const selectedPrize = prizes[randomIndex];
-    console.log('Selected prize:', selectedPrize.amount, 'at index', randomIndex);
+    // Всегда выпадает 200 $Mori (рулетка крутится, но останавливается на этом призе)
+    const randomIndex = prizes.findIndex(p => p.amount === 200);
+    const selectedPrize = prizes[randomIndex >= 0 ? randomIndex : 3]; // 200 Mori = index 3
+    const prizeIndex = randomIndex >= 0 ? randomIndex : 3;
+    console.log('Selected prize (fixed 200 Mori):', selectedPrize.amount, 'at index', prizeIndex);
     
     // Calculate positions
     const coinHeight = 200;
@@ -232,8 +233,8 @@ function spin() {
     const startVisualIndex = middleSetIndex * prizes.length + currentPrizeIndex;
     const startY = startVisualIndex * coinHeight - centerOffset;
     
-    // End position - selected prize in middle set
-    const endVisualIndex = middleSetIndex * prizes.length + randomIndex;
+    // End position - selected prize in middle set (всегда 200 Mori)
+    const endVisualIndex = middleSetIndex * prizes.length + prizeIndex;
     const endY = endVisualIndex * coinHeight - centerOffset;
     
     // Calculate spin distance (8-10 full rotations)
@@ -241,7 +242,7 @@ function spin() {
     const fullCycles = Math.floor(rotations);
     
     // Calculate distance difference
-    let indexDiff = randomIndex - currentPrizeIndex;
+    let indexDiff = prizeIndex - currentPrizeIndex;
     if (indexDiff < 0) {
         indexDiff += prizes.length;
     }
@@ -251,7 +252,6 @@ function spin() {
     const finalY = startY - totalSpinDistance;
     
     // Save values for setTimeout
-    const savedRandomIndex = randomIndex;
     const savedSelectedPrize = selectedPrize;
     
     // Add spinning animation
